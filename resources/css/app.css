@@ -5,3 +5,40 @@
 [x-cloak] {
     display: none !important;
 }
+
+@media (min-width: 1024px) {
+    html[data-sidebar-collapsed='true'] .erp-sidebar {
+        width: 5rem;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-app-content {
+        padding-left: 5rem;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-sidebar-header {
+        justify-content: center;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-sidebar-brand-expanded,
+    html[data-sidebar-collapsed='true'] .erp-sidebar-label {
+        display: none;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-sidebar-brand-collapsed {
+        display: flex;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-sidebar-nav {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    html[data-sidebar-collapsed='true'] .erp-sidebar-item {
+        justify-content: center;
+        gap: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
