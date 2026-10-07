@@ -124,8 +124,24 @@
             <span class="erp-sidebar-label">Vendedores</span>
         </a>
 
+        <a
+            href="{{ route('products.index') }}"
+            @class([
+                'erp-sidebar-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-sm shadow-violet-200' => request()->routeIs('products.*'),
+                'text-slate-600 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('products.*'),
+            ])
+            :title="sidebarCollapsed ? 'Produtos' : null"
+            @if (request()->routeIs('products.*')) aria-current="page" @endif
+            @click="sidebarOpen = false"
+        >
+            <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10" />
+            </svg>
+            <span class="erp-sidebar-label">Produtos</span>
+        </a>
+
         @foreach ([
-            ['Produtos', 'm4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10'],
             ['Vendas', 'M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H6M10 20h.01M17 20h.01'],
         ] as [$label, $icon])
             <span

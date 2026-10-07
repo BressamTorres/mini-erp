@@ -1,0 +1,142 @@
+function formatSalePrice(value) {
+    const digits = String(value ?? '').replace(/\D/g, '');
+
+    if (digits === '') {
+        return '';
+    }
+
+    const normalized = digits.replace(/^0+(?=\d)/, '').padStart(3, '0');
+    const integer = normalized.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const cents = normalized.slice(-2);
+
+    return `R$ ${integer},${cents}`;
+}
+
+export default function registerProductForm(Alpine) {
+    Alpine.data('productForm', (config) => ({
+        modalOpen: config.open,
+        mode: config.mode,
+        formAction: config.formAction,
+        storeUrl: config.storeUrl,
+        productId: config.productId,
+        fields: config.fields,
+        showServerErrors: config.open,
+        photoPreview: config.photoUrl ?? '',
+        existingPhotoUrl: config.photoUrl ?? '',
+        shouldRemovePhoto: config.removePhoto ?? false,
+        deleteModalOpen: false,
+        deleteAction: '',
+        deleteProductName: '',
+
+        init() {
+            this.fields.sale_price = formatSalePrice(this.fields.sale_price);
+            this.$watch('modalOpen', () => this.syncBodyScroll());
+            this.$watch('deleteModalOpen', () => this.syncBodyScroll());
+
+            if (this.modalOpen) {
+                this.focusSku();
+            }
+
+            this.syncBodyScroll();
+        },
+
+        openCreate() {
+            this.mode = 'create';
+            this.formAction = this.storeUrl;
+            this.productId = '';
+            this.fields = { sku: '', name: '', sale_price: '', active: '1' };
+            this.resetPhoto();
+            this.showServerErrors = false;
+            this.modalOpen = true;
+            this.focusSku();
+        },
+
+        openEdit(button) {
+            this.mode = 'edit';
+            this.formAction = button.dataset.action;
+            this.productId = button.dataset.id;
+            this.fields = {
+                sku: button.dataset.sku,
+                name: button.dataset.name,
+                sale_price: formatSalePrice(button.dataset.salePrice),
+                active: button.dataset.active,
+            };
+            this.resetPhoto(button.dataset.photoUrl);
+            this.showServerErrors = false;
+            this.modalOpen = true;
+            this.focusSku();
+        },
+
+        closeModal() {
+            this.modalOpen = false;
+            this.showServerErrors = false;
+        },
+
+        openDelete(button) {
+            this.deleteAction = button.dataset.action;
+            this.deleteProductName = button.dataset.name;
+            this.deleteModalOpen = true;
+            this.$nextTick(() => this.$refs.deleteCancel?.focus());
+        },
+
+        closeDeleteModal() {
+            this.deleteModalOpen = false;
+        },
+
+        syncBodyScroll() {
+            document.body.classList.toggle('overflow-hidden', this.modalOpen || this.deleteModalOpen);
+        },
+
+        focusSku() {
+            this.$nextTick(() => this.$refs.productSku?.focus());
+        },
+
+        selectPhoto(event) {
+            const [photo] = event.target.files;
+
+            if (!photo) {
+                return;
+            }
+
+            this.releasePhotoPreview();
+            this.photoPreview = URL.createObjectURL(photo);
+            this.shouldRemovePhoto = false;
+        },
+
+        removePhoto() {
+            this.releasePhotoPreview();
+            this.photoPreview = '';
+            this.shouldRemovePhoto = this.existingPhotoUrl !== '';
+
+            if (this.$refs.productPhoto) {
+                this.$refs.productPhoto.value = '';
+            }
+        },
+
+        resetPhoto(photoUrl = '') {
+            this.releasePhotoPreview();
+            this.existingPhotoUrl = photoUrl ?? '';
+            this.photoPreview = this.existingPhotoUrl;
+            this.shouldRemovePhoto = false;
+
+            this.$nextTick(() => {
+                if (this.$refs.productPhoto) {
+                    this.$refs.productPhoto.value = '';
+                }
+            });
+        },
+
+        releasePhotoPreview() {
+            if (this.photoPreview.startsWith('blob:')) {
+                URL.revokeObjectURL(this.photoPreview);
+            }
+        },
+
+        maskSalePrice(event) {
+            const value = formatSalePrice(event.target.value);
+
+            event.target.value = value;
+            this.fields.sale_price = value;
+        },
+    }));
+}
