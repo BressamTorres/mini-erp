@@ -8,6 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -26,7 +27,6 @@ class ProductControllerTest extends TestCase
 
         $this->post(route('products.store'), $this->validPayload())->assertRedirect(route('login'));
         $this->put(route('products.update', $product), $this->validPayload())->assertRedirect(route('login'));
-        $this->delete(route('products.destroy', $product))->assertRedirect(route('login'));
 
         $this->assertDatabaseCount('products', 1);
         $this->assertModelExists($product);
@@ -42,6 +42,7 @@ class ProductControllerTest extends TestCase
             ->assertSee('Imagem do produto')
             ->assertSee('role="combobox"', false)
             ->assertSee('name="active"', false)
+            ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertDontSee('<select id="product-active"', false)
             ->assertSee('enctype="multipart/form-data"', false);
     }
@@ -358,21 +359,27 @@ class ProductControllerTest extends TestCase
         Storage::disk('public')->assertMissing($path);
     }
 
-    public function test_authenticated_user_can_physically_delete_product_and_photo(): void
+    public function test_inactivating_product_keeps_record_and_photo(): void
     {
         Storage::fake('public');
-        $path = 'products/delete.jpg';
+        $path = 'products/status.jpg';
         Storage::disk('public')->put($path, 'content');
-        $product = Product::factory()->create(['photo_path' => $path]);
-        $otherProduct = Product::factory()->create();
+        $product = Product::factory()->create(['active' => true, 'photo_path' => $path]);
+        $payload = $this->validPayload();
+        $payload['active'] = '0';
 
-        $response = $this->actingAs(User::factory()->create())->delete(route('products.destroy', $product));
+        $response = $this->actingAs(User::factory()->create())->put(route('products.update', $product), $payload);
 
-        $response->assertSessionHas('success', 'Produto excluído com sucesso.')
-            ->assertRedirect(route('products.index'));
-        $this->assertModelMissing($product);
-        $this->assertModelExists($otherProduct);
-        Storage::disk('public')->assertMissing($path);
+        $response->assertSessionHasNoErrors();
+        $this->assertModelExists($product);
+        $this->assertFalse($product->fresh()->active);
+        $this->assertSame($path, $product->fresh()->photo_path);
+        Storage::disk('public')->assertExists($path);
+    }
+
+    public function test_product_delete_route_does_not_exist(): void
+    {
+        $this->assertFalse(Route::has('products.destroy'));
     }
 
     public function test_search_finds_product_by_partial_sku(): void
@@ -404,6 +411,39 @@ class ProductControllerTest extends TestCase
         $response->assertOk()->assertSee('R$ 1.234,50');
     }
 
+    public function test_product_list_hides_inactive_by_default_and_can_show_all_statuses(): void
+    {
+        $active = Product::factory()->create(['name' => 'Produto ativo', 'active' => true]);
+        $inactive = Product::factory()->create(['name' => 'Produto inativo oculto', 'active' => false]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('products.index'))
+            ->assertOk()
+            ->assertSee($active->name)
+            ->assertDontSee($inactive->name)
+            ->assertViewHas('showInactive', false);
+
+        $this->actingAs($user)->get(route('products.index', ['show_inactive' => '1']))
+            ->assertOk()
+            ->assertSee($active->name)
+            ->assertSee($inactive->name)
+            ->assertViewHas('showInactive', true)
+            ->assertSee('value="1" checked', false);
+    }
+
+    public function test_product_search_works_together_with_inactive_filter(): void
+    {
+        $target = Product::factory()->create(['name' => 'Camiseta inativa filtrada', 'active' => false]);
+        Product::factory()->create(['name' => 'Tênis inativo', 'active' => false]);
+
+        $response = $this->actingAs(User::factory()->create())->get(route('products.index', [
+            'search' => 'Camiseta',
+            'show_inactive' => '1',
+        ]));
+
+        $response->assertOk()->assertSee($target->name)->assertDontSee('Tênis inativo');
+    }
+
     public function test_product_list_is_paginated_with_five_records_and_preserves_search(): void
     {
         Product::factory()->count(11)->sequence(fn (Sequence $sequence): array => [
@@ -411,7 +451,10 @@ class ProductControllerTest extends TestCase
             'name' => sprintf('Produto %02d', $sequence->index + 1),
         ])->create();
 
-        $response = $this->actingAs(User::factory()->create())->get(route('products.index', ['search' => 'Produto']));
+        $response = $this->actingAs(User::factory()->create())->get(route('products.index', [
+            'search' => 'Produto',
+            'show_inactive' => '1',
+        ]));
 
         $response->assertOk()
             ->assertSee('Produto 01')
@@ -422,7 +465,8 @@ class ProductControllerTest extends TestCase
                 return $products->perPage() === 5
                     && $products->count() === 5
                     && $products->total() === 11
-                    && str_contains((string) $products->nextPageUrl(), 'search=Produto');
+                    && str_contains((string) $products->nextPageUrl(), 'search=Produto')
+                    && str_contains((string) $products->nextPageUrl(), 'show_inactive=1');
             });
     }
 

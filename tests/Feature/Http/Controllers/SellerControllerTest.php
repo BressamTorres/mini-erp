@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Models\Seller;
+use App\Models\Person;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -23,13 +24,12 @@ class SellerControllerTest extends TestCase
 
     public function test_visitor_cannot_change_sellers(): void
     {
-        $seller = Seller::factory()->create();
+        $seller = Person::factory()->seller()->create();
 
         $this->post(route('sellers.store'), $this->validPayload())->assertRedirect(route('login'));
         $this->put(route('sellers.update', $seller), $this->validPayload())->assertRedirect(route('login'));
-        $this->delete(route('sellers.destroy', $seller))->assertRedirect(route('login'));
 
-        $this->assertDatabaseCount('sellers', 1);
+        $this->assertDatabaseCount('persons', 1);
         $this->assertModelExists($seller);
     }
 
@@ -41,6 +41,7 @@ class SellerControllerTest extends TestCase
             ->assertSee('Cadastre e gerencie seus vendedores.')
             ->assertSee('Novo vendedor')
             ->assertSee('Foto do vendedor')
+            ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertSee('enctype="multipart/form-data"', false);
     }
 
@@ -50,12 +51,13 @@ class SellerControllerTest extends TestCase
             'name' => 'Ana Costa',
             'phone' => '(04) 49999-0000',
             'email' => 'ana@example.com',
+            'active' => '1',
         ]);
 
         $response->assertSessionHasNoErrors()
             ->assertSessionHas('success', 'Vendedor cadastrado com sucesso.')
             ->assertRedirect(route('sellers.index'));
-        $this->assertDatabaseHas('sellers', [
+        $this->assertDatabaseHas('persons', [
             'name' => 'Ana Costa',
             'document' => null,
             'phone' => '04499990000',
@@ -72,7 +74,7 @@ class SellerControllerTest extends TestCase
         $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $seller = Seller::query()->firstOrFail();
+        $seller = Person::query()->where('type', Person::TYPE_SELLER)->firstOrFail();
         $this->assertSame('01234567890', $seller->document);
     }
 
@@ -84,7 +86,7 @@ class SellerControllerTest extends TestCase
         $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('sellers', ['document' => '12345678000190']);
+        $this->assertDatabaseHas('persons', ['document' => '12345678000190']);
     }
 
     #[DataProvider('invalidDocuments')]
@@ -98,7 +100,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasErrors(['document' => 'Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     /** @return array<string, array{string}> */
@@ -114,7 +116,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), ['phone' => '(44) 99999-0000']);
 
         $response->assertSessionHasErrors(['name' => 'O nome é obrigatório.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     public function test_phone_is_required(): void
@@ -124,7 +126,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), ['name' => 'Ana Costa']);
 
         $response->assertSessionHasErrors(['phone' => 'O telefone é obrigatório.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     #[DataProvider('invalidPhones')]
@@ -138,7 +140,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasErrors(['phone' => 'Informe um telefone com 10 ou 11 dígitos.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     /** @return array<string, array{string}> */
@@ -157,7 +159,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasErrors(['email' => 'Informe um e-mail válido.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     public function test_seller_can_be_created_with_valid_photo(): void
@@ -169,10 +171,10 @@ class SellerControllerTest extends TestCase
         $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $seller = Seller::query()->firstOrFail();
+        $seller = Person::query()->where('type', Person::TYPE_SELLER)->firstOrFail();
         $this->assertNotNull($seller->photo_path);
-        $this->assertStringStartsWith('sellers/', $seller->photo_path);
-        $this->assertNotSame('sellers/vendedor.jpg', $seller->photo_path);
+        $this->assertStringStartsWith('persons/', $seller->photo_path);
+        $this->assertNotSame('persons/vendedor.jpg', $seller->photo_path);
         Storage::disk('public')->assertExists($seller->photo_path);
     }
 
@@ -187,7 +189,7 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasErrors(['photo' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     public function test_photo_larger_than_two_megabytes_is_rejected(): void
@@ -201,23 +203,24 @@ class SellerControllerTest extends TestCase
             ->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 2 MB.']);
-        $this->assertDatabaseEmpty('sellers');
+        $this->assertDatabaseEmpty('persons');
     }
 
     public function test_authenticated_user_can_update_seller(): void
     {
-        $seller = Seller::factory()->create(['name' => 'Nome antigo']);
+        $seller = Person::factory()->seller()->create(['name' => 'Nome antigo']);
 
         $response = $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), [
             'name' => 'Nome atualizado',
             'phone' => '(11) 3333-4444',
             'email' => 'atualizado@example.com',
+            'active' => '1',
         ]);
 
         $response->assertSessionHasNoErrors()
             ->assertSessionHas('success', 'Vendedor atualizado com sucesso.')
             ->assertRedirect(route('sellers.index'));
-        $this->assertDatabaseHas('sellers', [
+        $this->assertDatabaseHas('persons', [
             'id' => $seller->id,
             'name' => 'Nome atualizado',
             'phone' => '1133334444',
@@ -227,7 +230,7 @@ class SellerControllerTest extends TestCase
 
     public function test_authenticated_user_can_update_seller_document(): void
     {
-        $seller = Seller::factory()->create(['document' => '12345678901']);
+        $seller = Person::factory()->seller()->create(['document' => '12345678901']);
         $payload = $this->validPayload();
         $payload['document'] = '98.765.432/0001-10';
 
@@ -239,7 +242,7 @@ class SellerControllerTest extends TestCase
 
     public function test_authenticated_user_can_remove_seller_document(): void
     {
-        $seller = Seller::factory()->create(['document' => '12345678901']);
+        $seller = Person::factory()->seller()->create(['document' => '12345678901']);
         $payload = $this->validPayload();
         $payload['document'] = '';
 
@@ -252,9 +255,9 @@ class SellerControllerTest extends TestCase
     public function test_update_without_new_photo_keeps_current_photo(): void
     {
         Storage::fake('public');
-        $path = 'sellers/current.jpg';
+        $path = 'persons/current.jpg';
         Storage::disk('public')->put($path, 'content');
-        $seller = Seller::factory()->create(['photo_path' => $path]);
+        $seller = Person::factory()->seller()->create(['photo_path' => $path]);
 
         $response = $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), $this->validPayload());
 
@@ -266,9 +269,9 @@ class SellerControllerTest extends TestCase
     public function test_replacing_photo_updates_path_and_removes_old_file(): void
     {
         Storage::fake('public');
-        $oldPath = 'sellers/old.jpg';
+        $oldPath = 'persons/old.jpg';
         Storage::disk('public')->put($oldPath, 'old');
-        $seller = Seller::factory()->create(['photo_path' => $oldPath]);
+        $seller = Person::factory()->seller()->create(['photo_path' => $oldPath]);
         $payload = $this->validPayload();
         $payload['photo'] = UploadedFile::fake()->image('new.png');
 
@@ -285,9 +288,9 @@ class SellerControllerTest extends TestCase
     public function test_authenticated_user_can_remove_photo(): void
     {
         Storage::fake('public');
-        $path = 'sellers/remove.webp';
+        $path = 'persons/remove.webp';
         Storage::disk('public')->put($path, 'content');
-        $seller = Seller::factory()->create(['photo_path' => $path]);
+        $seller = Person::factory()->seller()->create(['photo_path' => $path]);
         $payload = $this->validPayload();
         $payload['remove_photo'] = '1';
 
@@ -298,21 +301,55 @@ class SellerControllerTest extends TestCase
         Storage::disk('public')->assertMissing($path);
     }
 
-    public function test_authenticated_user_can_physically_delete_seller_and_photo(): void
+    public function test_new_seller_uses_active_database_default(): void
+    {
+        $seller = Person::query()->create([
+            'type' => Person::TYPE_SELLER,
+            'name' => 'Vendedor padrão',
+            'phone' => '44999990000',
+        ]);
+
+        $this->assertTrue($seller->refresh()->active);
+    }
+
+    public function test_seller_can_be_created_as_active_or_inactive(): void
+    {
+        $activePayload = $this->validPayload();
+        $inactivePayload = $this->validPayload();
+        $inactivePayload['name'] = 'Vendedor inativo';
+        $inactivePayload['active'] = '0';
+
+        $this->actingAs(User::factory()->create())->post(route('sellers.store'), $activePayload)->assertSessionHasNoErrors();
+        $this->actingAs(User::factory()->create())->post(route('sellers.store'), $inactivePayload)->assertSessionHasNoErrors();
+
+        $this->assertTrue(Person::query()->where('type', Person::TYPE_SELLER)->where('name', 'Vendedor Teste')->firstOrFail()->active);
+        $this->assertFalse(Person::query()->where('type', Person::TYPE_SELLER)->where('name', 'Vendedor inativo')->firstOrFail()->active);
+    }
+
+    public function test_seller_can_change_between_active_and_inactive_without_removing_record_or_photo(): void
     {
         Storage::fake('public');
-        $path = 'sellers/delete.jpg';
-        Storage::disk('public')->put($path, 'content');
-        $seller = Seller::factory()->create(['photo_path' => $path]);
-        $otherSeller = Seller::factory()->create();
+        $photoPath = 'persons/status-photo.jpg';
+        Storage::disk('public')->put($photoPath, 'content');
+        $seller = Person::factory()->seller()->create(['active' => true, 'photo_path' => $photoPath]);
+        $payload = $this->validPayload();
+        $payload['active'] = '0';
 
-        $response = $this->actingAs(User::factory()->create())->delete(route('sellers.destroy', $seller));
+        $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), $payload)->assertSessionHasNoErrors();
 
-        $response->assertSessionHas('success', 'Vendedor excluído com sucesso.')
-            ->assertRedirect(route('sellers.index'));
-        $this->assertModelMissing($seller);
-        $this->assertModelExists($otherSeller);
-        Storage::disk('public')->assertMissing($path);
+        $this->assertModelExists($seller);
+        $this->assertFalse($seller->fresh()->active);
+        $this->assertSame($photoPath, $seller->fresh()->photo_path);
+        Storage::disk('public')->assertExists($photoPath);
+
+        $payload['active'] = '1';
+        $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), $payload)->assertSessionHasNoErrors();
+        $this->assertTrue($seller->fresh()->active);
+    }
+
+    public function test_seller_delete_route_does_not_exist(): void
+    {
+        $this->assertFalse(Route::has('sellers.destroy'));
     }
 
     /**
@@ -335,14 +372,14 @@ class SellerControllerTest extends TestCase
     #[DataProvider('searchCriteria')]
     public function test_search_finds_seller_by_supported_field(string $search, string $field, string $value): void
     {
-        $target = Seller::factory()->create([
+        $target = Person::factory()->seller()->create([
             'name' => 'Vendedor encontrado',
             'document' => '11122233344',
             'phone' => '11911112222',
             'email' => 'encontrado@example.com',
             $field => $value,
         ]);
-        Seller::factory()->create([
+        Person::factory()->seller()->create([
             'name' => 'Vendedor ignorado',
             'document' => '55566677788',
             'phone' => '22933334444',
@@ -356,7 +393,7 @@ class SellerControllerTest extends TestCase
 
     public function test_list_formats_document_and_phone_without_changing_storage(): void
     {
-        $seller = Seller::factory()->create([
+        $seller = Person::factory()->seller()->create([
             'document' => '01234567890',
             'phone' => '44999999999',
         ]);
@@ -370,13 +407,49 @@ class SellerControllerTest extends TestCase
         $this->assertSame('44999999999', $seller->fresh()->phone);
     }
 
+    public function test_seller_list_hides_inactive_by_default_and_can_show_all_statuses(): void
+    {
+        $active = Person::factory()->seller()->create(['name' => 'Vendedor ativo', 'active' => true]);
+        $inactive = Person::factory()->seller()->create(['name' => 'Vendedor inativo oculto', 'active' => false]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('sellers.index'))
+            ->assertOk()
+            ->assertSee($active->name)
+            ->assertDontSee($inactive->name)
+            ->assertViewHas('showInactive', false);
+
+        $this->actingAs($user)->get(route('sellers.index', ['show_inactive' => '1']))
+            ->assertOk()
+            ->assertSee($active->name)
+            ->assertSee($inactive->name)
+            ->assertViewHas('showInactive', true)
+            ->assertSee('value="1" checked', false);
+    }
+
+    public function test_seller_search_works_with_inactive_filter_without_mixing_customers(): void
+    {
+        $seller = Person::factory()->seller()->create(['name' => 'Pessoa filtrada vendedor', 'active' => false]);
+        $customer = Person::factory()->customer()->create(['name' => 'Pessoa filtrada cliente', 'active' => false]);
+
+        $response = $this->actingAs(User::factory()->create())->get(route('sellers.index', [
+            'search' => 'Pessoa filtrada',
+            'show_inactive' => '1',
+        ]));
+
+        $response->assertOk()->assertSee($seller->name)->assertDontSee($customer->name);
+    }
+
     public function test_seller_list_is_paginated_with_five_records_and_preserves_search(): void
     {
-        Seller::factory()->count(11)->sequence(fn (Sequence $sequence): array => [
+        Person::factory()->seller()->count(11)->sequence(fn (Sequence $sequence): array => [
             'name' => sprintf('Vendedor %02d', $sequence->index + 1),
         ])->create();
 
-        $response = $this->actingAs(User::factory()->create())->get(route('sellers.index', ['search' => 'Vendedor']));
+        $response = $this->actingAs(User::factory()->create())->get(route('sellers.index', [
+            'search' => 'Vendedor',
+            'show_inactive' => '1',
+        ]));
 
         $response->assertOk()
             ->assertSee('Vendedor 01')
@@ -387,12 +460,13 @@ class SellerControllerTest extends TestCase
                 return $sellers->perPage() === 5
                     && $sellers->count() === 5
                     && $sellers->total() === 11
-                    && str_contains((string) $sellers->nextPageUrl(), 'search=Vendedor');
+                    && str_contains((string) $sellers->nextPageUrl(), 'search=Vendedor')
+                    && str_contains((string) $sellers->nextPageUrl(), 'show_inactive=1');
             });
     }
 
     /**
-     * @return array{name: string, document: string, phone: string, email: string}
+     * @return array{name: string, document: string, phone: string, email: string, active: string}
      */
     private function validPayload(): array
     {
@@ -401,6 +475,7 @@ class SellerControllerTest extends TestCase
             'document' => '123.456.789-00',
             'phone' => '(44) 99999-0000',
             'email' => 'vendedor@example.com',
+            'active' => '1',
         ];
     }
 }

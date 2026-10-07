@@ -21,9 +21,9 @@ class ProductService
     /**
      * @return LengthAwarePaginator<int, Product>
      */
-    public function paginate(?string $search = null): LengthAwarePaginator
+    public function paginate(?string $search = null, bool $showInactive = false): LengthAwarePaginator
     {
-        return $this->products->paginate($search);
+        return $this->products->paginate($search, $showInactive);
     }
 
     /**
@@ -81,15 +81,6 @@ class ProductService
         }
 
         return $updatedProduct;
-    }
-
-    public function destroy(int $productId): void
-    {
-        $product = $this->products->findOrFail($productId);
-        $photoPath = $product->photo_path;
-
-        $this->products->delete($product);
-        $this->deletePhoto($photoPath);
     }
 
     private function storePhoto(UploadedFile $photo): string

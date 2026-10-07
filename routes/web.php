@@ -18,27 +18,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])
         ->whereNumber('customer')
         ->name('customers.update');
-    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
-        ->whereNumber('customer')
-        ->name('customers.destroy');
 
     Route::get('/sellers', [SellerController::class, 'index'])->name('sellers.index');
     Route::post('/sellers', [SellerController::class, 'store'])->name('sellers.store');
     Route::put('/sellers/{seller}', [SellerController::class, 'update'])
         ->whereNumber('seller')
         ->name('sellers.update');
-    Route::delete('/sellers/{seller}', [SellerController::class, 'destroy'])
-        ->whereNumber('seller')
-        ->name('sellers.destroy');
 
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::put('/products/{product}', [ProductController::class, 'update'])
         ->whereNumber('product')
         ->name('products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])
-        ->whereNumber('product')
-        ->name('products.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

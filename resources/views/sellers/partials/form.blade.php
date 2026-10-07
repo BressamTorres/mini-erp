@@ -38,6 +38,31 @@
                     placeholder="vendedor@email.com">
                 @error('email')<p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror
             </div>
+
+            <div class="sm:col-span-2">
+                <label for="seller-active" class="mb-2 block text-sm font-medium text-slate-700">Situação <span class="text-rose-500">*</span></label>
+                <div class="relative" x-data="selectCombobox({ value: fields.active, options: [{ value: '1', label: 'Ativo' }, { value: '0', label: 'Inativo' }] })"
+                    x-effect="setValue(fields.active); if (! modalOpen) close()" @combobox-change="fields.active = $event.detail.value" @click.outside="close()">
+                    <input type="hidden" name="active" x-bind:value="value">
+                    <button id="seller-active" x-ref="trigger" type="button" role="combobox" aria-haspopup="listbox" aria-controls="seller-active-options" x-bind:aria-expanded="open"
+                        @click="toggle" @keydown.arrow-down.prevent="open ? move(1) : openMenu()" @keydown.arrow-up.prevent="open ? move(-1) : openMenu()" @keydown.enter.prevent="open ? select(options[activeIndex]) : openMenu()" @keydown.space.prevent="open ? select(options[activeIndex]) : openMenu()" @keydown.escape.stop.prevent="close(true)"
+                        @class(['flex w-full items-center justify-between rounded-lg bg-white px-3.5 py-2.5 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500', 'border border-rose-300 focus:border-rose-400' => $errors->has('active'), 'border border-slate-300 focus:border-violet-500' => ! $errors->has('active')])>
+                        <span class="text-slate-700" x-text="selectedLabel"></span>
+                        <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150" x-bind:class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    <div id="seller-active-options" x-ref="menu" x-cloak x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-1" role="listbox" x-bind:data-placement="placement"
+                        x-bind:class="{ 'top-full mt-1.5': placement === 'bottom', 'bottom-full mb-1.5': placement === 'top', 'invisible': ! positioned }" class="absolute z-30 w-full overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/70">
+                        <template x-for="(option, index) in options" x-bind:key="option.value">
+                            <button type="button" role="option" data-combobox-option x-bind:aria-selected="value === String(option.value)" x-bind:tabindex="index === activeIndex ? 0 : -1" x-bind:class="value === String(option.value) ? 'bg-violet-50 text-violet-700' : 'text-slate-700 hover:bg-slate-50'" class="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm font-medium transition"
+                                @click="select(option)" @mouseenter="activeIndex = index" @focus="activeIndex = index" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)" @keydown.home.prevent="activeIndex = 0; focusOption()" @keydown.end.prevent="activeIndex = options.length - 1; focusOption()" @keydown.escape.stop.prevent="close(true)" @keydown.tab="close()">
+                                <span x-text="option.label"></span>
+                                <svg x-show="value === String(option.value)" class="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6" /></svg>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                @error('active')<p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror
+            </div>
         </div>
 
         <div>

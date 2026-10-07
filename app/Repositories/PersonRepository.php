@@ -2,18 +2,20 @@
 
 namespace App\Repositories;
 
-use App\Models\Customer;
+use App\Models\Person;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
-class CustomerRepository
+class PersonRepository
 {
     /**
-     * @return LengthAwarePaginator<int, Customer>
+     * @return LengthAwarePaginator<int, Person>
      */
-    public function paginate(?string $search = null, ?string $normalizedSearch = null): LengthAwarePaginator
+    public function paginate(string $type, ?string $search = null, ?string $normalizedSearch = null, bool $showInactive = false): LengthAwarePaginator
     {
-        return Customer::query()
+        return Person::query()
+            ->where('type', $type)
+            ->when(! $showInactive, fn (Builder $query) => $query->where('active', true))
             ->when($search !== null, function (Builder $query) use ($normalizedSearch, $search): void {
                 $query->where(function (Builder $query) use ($normalizedSearch, $search): void {
                     $query->where('name', 'like', "%{$search}%")
@@ -34,28 +36,28 @@ class CustomerRepository
     /**
      * @param  array<string, mixed>  $data
      */
-    public function create(array $data): Customer
+    public function create(string $type, array $data): Person
     {
-        return Customer::query()->create($data);
+        $data['type'] = $type;
+
+        return Person::query()->create($data);
     }
 
-    public function findOrFail(int $id): Customer
+    public function findOrFailByType(int $id, string $type): Person
     {
-        return Customer::query()->findOrFail($id);
+        return Person::query()
+            ->where('type', $type)
+            ->findOrFail($id);
     }
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function update(Customer $customer, array $data): Customer
+    public function update(Person $person, array $data): Person
     {
-        $customer->update($data);
+        unset($data['type']);
+        $person->update($data);
 
-        return $customer->refresh();
-    }
-
-    public function delete(Customer $customer): void
-    {
-        $customer->delete();
+        return $person->refresh();
     }
 }

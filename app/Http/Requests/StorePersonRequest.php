@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSellerRequest extends FormRequest
+class StorePersonRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,13 +15,23 @@ class StoreSellerRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $document = $this->input('document');
-
-        $this->merge([
+        $normalized = [
             'document' => $document === null || $document === ''
                 ? null
                 : $this->removeFormatting($document),
             'phone' => $this->removeFormatting($this->input('phone', '')),
-        ]);
+        ];
+
+        if ($this->exists('active')) {
+            $active = $this->input('active');
+            $normalized['active'] = match ($active) {
+                '1', 1 => true,
+                '0', 0 => false,
+                default => $active,
+            };
+        }
+
+        $this->merge($normalized);
     }
 
     /**
@@ -34,6 +44,7 @@ class StoreSellerRequest extends FormRequest
             'document' => ['nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/'],
             'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['nullable', 'email', 'max:255'],
+            'active' => ['required', 'boolean'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:2048'],
             'remove_photo' => ['nullable', 'boolean'],
         ];
@@ -55,6 +66,8 @@ class StoreSellerRequest extends FormRequest
             'phone.regex' => 'Informe um telefone com 10 ou 11 dígitos.',
             'email.email' => 'Informe um e-mail válido.',
             'email.max' => 'O e-mail deve ter no máximo 255 caracteres.',
+            'active.required' => 'A situação é obrigatória.',
+            'active.boolean' => 'Selecione uma situação válida.',
             'photo.mimes' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.extensions' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.image' => 'O arquivo enviado deve ser uma imagem válida.',

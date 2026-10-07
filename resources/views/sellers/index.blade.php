@@ -15,6 +15,7 @@
             'document' => (string) old('document', ''),
             'phone' => (string) old('phone', ''),
             'email' => (string) old('email', ''),
+            'active' => (string) old('active', '1'),
         ],
     ];
 @endphp
@@ -49,10 +50,11 @@
                         <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
                         <input id="seller-search" type="search" name="search" value="{{ $search }}" placeholder="Buscar por nome, CPF/CNPJ, telefone ou e-mail..." class="block w-full rounded-lg border-slate-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500">
                     </div>
+                    <label for="seller-show-inactive" class="inline-flex shrink-0 cursor-pointer items-center gap-2 self-center px-1 py-2 text-sm font-medium text-slate-600">
+                        <input id="seller-show-inactive" name="show_inactive" type="checkbox" value="1" @checked($showInactive) class="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" @change="$el.form.requestSubmit()">
+                        Visualizar inativos
+                    </label>
                     <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700">Buscar</button>
-                    @if ($search !== '')
-                        <a href="{{ route('sellers.index') }}" class="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-violet-700">Limpar</a>
-                    @endif
                 </form>
             </div>
 
@@ -72,6 +74,7 @@
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">CPF/CNPJ</th>
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Telefone</th>
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">E-mail</th>
+                            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Situação</th>
                             <th scope="col" class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Ações</th>
                         </tr></thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -81,15 +84,12 @@
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $seller->formattedDocument() ?: '—' }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $seller->formattedPhone() }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $seller->email ?: '—' }}</td>
+                                    <td class="whitespace-nowrap px-5 py-3.5 text-sm"><x-active-status-badge :active="$seller->active" /></td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-center">
                                         <div class="inline-flex items-center justify-center gap-1.5">
                                             <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1"
-                                                data-id="{{ $seller->id }}" data-name="{{ $seller->name }}" data-document="{{ $seller->document }}" data-phone="{{ $seller->phone }}" data-email="{{ $seller->email }}" data-photo-url="{{ $seller->photoUrl() }}" data-action="{{ route('sellers.update', ['seller' => $seller->id]) }}" @click="openEdit($el)" title="Editar" aria-label="Editar vendedor {{ $seller->name }}">
+                                                data-id="{{ $seller->id }}" data-name="{{ $seller->name }}" data-document="{{ $seller->document }}" data-phone="{{ $seller->phone }}" data-email="{{ $seller->email }}" data-active="{{ $seller->active ? '1' : '0' }}" data-photo-url="{{ $seller->photoUrl() }}" data-action="{{ route('sellers.update', ['seller' => $seller->id]) }}" @click="openEdit($el)" title="Editar" aria-label="Editar vendedor {{ $seller->name }}">
                                                 <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m14.7 6.3 3 3M5 19l3.6-.7L19 7.9a2.1 2.1 0 0 0-3-3L5.7 15.3 5 19Z" /></svg>
-                                            </button>
-                                            <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-1"
-                                                data-name="{{ $seller->name }}" data-action="{{ route('sellers.destroy', ['seller' => $seller->id]) }}" @click="openDelete($el)" title="Excluir" aria-label="Excluir vendedor {{ $seller->name }}">
-                                                <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>
                                             </button>
                                         </div>
                                     </td>
@@ -118,26 +118,5 @@
             </div>
         </div>
 
-        <div x-cloak x-show="deleteModalOpen" x-transition:enter="transition-opacity ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto" @keydown.escape.window="closeDeleteModal" aria-labelledby="delete-seller-modal-title" role="dialog" aria-modal="true">
-            <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
-                <div class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm" @click="closeDeleteModal"></div>
-                <section x-show="deleteModalOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2 scale-[0.98]" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-1 scale-[0.98]" class="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20">
-                    <form method="POST" x-bind:action="deleteAction">@csrf @method('DELETE')
-                        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
-                            <h2 id="delete-seller-modal-title" class="text-lg font-bold text-slate-900">Excluir vendedor</h2>
-                            <button type="button" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeDeleteModal" aria-label="Fechar modal"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 18 18 6M6 6l12 12" /></svg></button>
-                        </div>
-                        <div class="space-y-2 px-5 py-6 sm:px-6">
-                            <p class="text-sm leading-6 text-slate-700">Tem certeza que deseja excluir o vendedor <span class="font-semibold text-slate-900">&quot;<span x-text="deleteSellerName"></span>&quot;</span>?</p>
-                            <p class="text-sm text-slate-500">Esta ação não poderá ser desfeita.</p>
-                        </div>
-                        <div class="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-                            <button x-ref="deleteCancel" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50" @click="closeDeleteModal">Cancelar</button>
-                            <button type="submit" class="rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-rose-200 transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">Excluir vendedor</button>
-                        </div>
-                    </form>
-                </section>
-            </div>
-        </div>
     </div>
 </x-app-layout>

@@ -16,10 +16,12 @@ class ProductController extends Controller
     public function index(Request $request): View
     {
         $search = $request->string('search')->trim()->toString();
+        $showInactive = $request->boolean('show_inactive');
 
         return view('products.index', [
-            'products' => $this->products->paginate($search !== '' ? $search : null),
+            'products' => $this->products->paginate($search !== '' ? $search : null, $showInactive),
             'search' => $search,
+            'showInactive' => $showInactive,
         ]);
     }
 
@@ -35,12 +37,5 @@ class ProductController extends Controller
         $this->products->update($product, $request->validated());
 
         return to_route('products.index')->with('success', 'Produto atualizado com sucesso.');
-    }
-
-    public function destroy(int $product): RedirectResponse
-    {
-        $this->products->destroy($product);
-
-        return to_route('products.index')->with('success', 'Produto excluído com sucesso.');
     }
 }

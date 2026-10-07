@@ -2,16 +2,37 @@
 
 namespace App\Models;
 
-use Database\Factories\SellerFactory;
+use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'document', 'phone', 'email', 'photo_path'])]
-class Seller extends Model
+#[Fillable(['name', 'document', 'phone', 'email', 'photo_path', 'type', 'active'])]
+class Person extends Model
 {
-    /** @use HasFactory<SellerFactory> */
+    /** @use HasFactory<PersonFactory> */
     use HasFactory;
+
+    public const TYPE_CUSTOMER = 'customer';
+
+    public const TYPE_SELLER = 'seller';
+
+    public const TYPES = [
+        self::TYPE_CUSTOMER,
+        self::TYPE_SELLER,
+    ];
+
+    protected $table = 'persons';
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+        ];
+    }
 
     public function formattedDocument(): ?string
     {

@@ -2,41 +2,46 @@
 
 namespace App\Services;
 
-use App\Models\Seller;
-use App\Repositories\SellerRepository;
+use App\Models\Person;
+use App\Repositories\PersonRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 
-class SellerService
+class PersonService
 {
-    private const PHOTO_DIRECTORY = 'sellers';
+    private const PHOTO_DIRECTORY = 'persons';
 
     private const PHOTO_DISK = 'public';
 
-    public function __construct(private SellerRepository $sellers) {}
+    public function __construct(private PersonRepository $persons) {}
 
     /**
-     * @return LengthAwarePaginator<int, Seller>
+     * @return LengthAwarePaginator<int, Person>
      */
-    public function paginate(?string $search = null): LengthAwarePaginator
+    public function paginate(string $type, ?string $search = null, bool $showInactive = false): LengthAwarePaginator
     {
+        $this->ensureValidType($type);
+
         $normalizedSearch = $search !== null && preg_match('/^[\d\s().\/-]+$/', $search) === 1
             ? preg_replace('/\D+/', '', $search)
             : null;
 
-        return $this->sellers->paginate($search, $normalizedSearch ?: null);
+        return $this->persons->paginate($type, $search, $normalizedSearch ?: null, $showInactive);
     }
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function create(array $data): Seller
+    public function create(string $type, array $data): Person
     {
+        $this->ensureValidType($type);
+
         $photo = $data['photo'] ?? null;
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['type']);
 
         $photoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
 
@@ -45,7 +50,7 @@ class SellerService
         }
 
         try {
-            return $this->sellers->create($data);
+            return $this->persons->create($type, $data);
         } catch (Throwable $exception) {
             $this->deletePhoto($photoPath);
 
@@ -56,13 +61,15 @@ class SellerService
     /**
      * @param  array<string, mixed>  $data
      */
-    public function update(int $sellerId, array $data): Seller
+    public function update(string $type, int $personId, array $data): Person
     {
-        $seller = $this->sellers->findOrFail($sellerId);
-        $oldPhotoPath = $seller->photo_path;
+        $this->ensureValidType($type);
+
+        $person = $this->persons->findOrFailByType($personId, $type);
+        $oldPhotoPath = $person->photo_path;
         $photo = $data['photo'] ?? null;
         $removePhoto = (bool) ($data['remove_photo'] ?? false);
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['type']);
 
         $newPhotoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
 
@@ -73,7 +80,7 @@ class SellerService
         }
 
         try {
-            $updatedSeller = $this->sellers->update($seller, $data);
+            $updatedPerson = $this->persons->update($person, $data);
         } catch (Throwable $exception) {
             $this->deletePhoto($newPhotoPath);
 
@@ -84,16 +91,7 @@ class SellerService
             $this->deletePhoto($oldPhotoPath);
         }
 
-        return $updatedSeller;
-    }
-
-    public function destroy(int $sellerId): void
-    {
-        $seller = $this->sellers->findOrFail($sellerId);
-        $photoPath = $seller->photo_path;
-
-        $this->sellers->delete($seller);
-        $this->deletePhoto($photoPath);
+        return $updatedPerson;
     }
 
     private function storePhoto(UploadedFile $photo): string
@@ -101,7 +99,7 @@ class SellerService
         $path = $photo->store(self::PHOTO_DIRECTORY, self::PHOTO_DISK);
 
         if ($path === false) {
-            throw new RuntimeException('Não foi possível armazenar a foto do vendedor.');
+            throw new RuntimeException('Não foi possível armazenar a foto da pessoa.');
         }
 
         return $path;
@@ -111,6 +109,13 @@ class SellerService
     {
         if ($path !== null) {
             Storage::disk(self::PHOTO_DISK)->delete($path);
+        }
+    }
+
+    private function ensureValidType(string $type): void
+    {
+        if (! in_array($type, Person::TYPES, true)) {
+            throw new InvalidArgumentException('Tipo de pessoa inválido.');
         }
     }
 }

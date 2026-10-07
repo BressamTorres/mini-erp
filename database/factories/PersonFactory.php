@@ -2,17 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Models\Customer;
+use App\Models\Person;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Customer>
+ * @extends Factory<Person>
  */
-class CustomerFactory extends Factory
+class PersonFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -22,6 +20,19 @@ class CustomerFactory extends Factory
             'document' => fake()->optional()->numerify('###########'),
             'phone' => fake()->numerify('###########'),
             'email' => fake()->optional()->safeEmail(),
+            'photo_path' => null,
+            'type' => Person::TYPE_CUSTOMER,
+            'active' => true,
         ];
+    }
+
+    public function customer(): static
+    {
+        return $this->state(fn (): array => ['type' => Person::TYPE_CUSTOMER]);
+    }
+
+    public function seller(): static
+    {
+        return $this->state(fn (): array => ['type' => Person::TYPE_SELLER]);
     }
 }

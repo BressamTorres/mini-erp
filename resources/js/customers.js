@@ -47,16 +47,12 @@ export default function registerCustomerForm(Alpine) {
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
         shouldRemovePhoto: config.removePhoto ?? false,
-        deleteModalOpen: false,
-        deleteAction: '',
-        deleteCustomerName: '',
 
         init() {
             this.fields.document = formatDocument(this.fields.document);
             this.fields.phone = formatPhone(this.fields.phone);
 
             this.$watch('modalOpen', () => this.syncBodyScroll());
-            this.$watch('deleteModalOpen', () => this.syncBodyScroll());
 
             if (this.modalOpen) {
                 this.focusName();
@@ -69,7 +65,7 @@ export default function registerCustomerForm(Alpine) {
             this.mode = 'create';
             this.formAction = this.storeUrl;
             this.customerId = '';
-            this.fields = { name: '', document: '', phone: '', email: '' };
+            this.fields = { name: '', document: '', phone: '', email: '', active: '1' };
             this.resetPhoto();
             this.showServerErrors = false;
             this.modalOpen = true;
@@ -85,6 +81,7 @@ export default function registerCustomerForm(Alpine) {
                 document: formatDocument(button.dataset.document),
                 phone: formatPhone(button.dataset.phone),
                 email: button.dataset.email,
+                active: button.dataset.active,
             };
             this.resetPhoto(button.dataset.photoUrl);
             this.showServerErrors = false;
@@ -97,22 +94,8 @@ export default function registerCustomerForm(Alpine) {
             this.showServerErrors = false;
         },
 
-        openDelete(button) {
-            this.deleteAction = button.dataset.action;
-            this.deleteCustomerName = button.dataset.name;
-            this.deleteModalOpen = true;
-            this.$nextTick(() => this.$refs.deleteCancel?.focus());
-        },
-
-        closeDeleteModal() {
-            this.deleteModalOpen = false;
-        },
-
         syncBodyScroll() {
-            document.body.classList.toggle(
-                'overflow-hidden',
-                this.modalOpen || this.deleteModalOpen,
-            );
+            document.body.classList.toggle('overflow-hidden', this.modalOpen);
         },
 
         focusName() {

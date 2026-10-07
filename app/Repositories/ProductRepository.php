@@ -11,9 +11,10 @@ class ProductRepository
     /**
      * @return LengthAwarePaginator<int, Product>
      */
-    public function paginate(?string $search = null): LengthAwarePaginator
+    public function paginate(?string $search = null, bool $showInactive = false): LengthAwarePaginator
     {
         return Product::query()
+            ->when(! $showInactive, fn (Builder $query) => $query->where('active', true))
             ->when($search !== null, function (Builder $query) use ($search): void {
                 $query->where(function (Builder $query) use ($search): void {
                     $query->where('sku', 'like', "%{$search}%")
@@ -47,10 +48,5 @@ class ProductRepository
         $product->update($data);
 
         return $product->refresh();
-    }
-
-    public function delete(Product $product): void
-    {
-        $product->delete();
     }
 }
