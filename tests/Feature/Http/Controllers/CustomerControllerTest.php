@@ -53,6 +53,9 @@ class CustomerControllerTest extends TestCase
             ->assertSee('Cadastre e gerencie seus clientes.')
             ->assertSee('Novo cliente')
             ->assertSee('Foto do cliente')
+            ->assertSee('CPF/CNPJ')
+            ->assertSee('Nenhum cliente encontrado')
+            ->assertSee('colspan="6"', false)
             ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertSee('enctype="multipart/form-data"', false);
     }

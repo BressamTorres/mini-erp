@@ -53,20 +53,10 @@
                         <input id="product-show-inactive" name="show_inactive" type="checkbox" value="1" @checked($showInactive) class="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" @change="$el.form.requestSubmit()">
                         Visualizar inativos
                     </label>
-                    <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700">Buscar</button>
                 </form>
             </div>
 
-            @if ($products->isEmpty())
-                <div class="flex min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
-                    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-violet-50 text-violet-600">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10" /></svg>
-                    </span>
-                    <p class="mt-4 font-semibold text-slate-800">{{ $search !== '' ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado' }}</p>
-                    <p class="mt-1 max-w-sm text-sm text-slate-500">{{ $search !== '' ? 'Tente buscar usando outro código ou nome.' : 'Cadastre o primeiro produto para começar.' }}</p>
-                </div>
-            @else
-                <div class="overflow-x-auto">
+            <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200">
                         <thead class="bg-slate-50"><tr>
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Código</th>
@@ -76,7 +66,7 @@
                             <th scope="col" class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Ações</th>
                         </tr></thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            @foreach ($products as $product)
+                            @forelse ($products as $product)
                                 <tr class="transition hover:bg-slate-50/80">
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm font-medium text-slate-700">{{ $product->sku }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm font-medium text-slate-800">{{ $product->name }}</td>
@@ -93,10 +83,22 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="h-64 px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <span class="flex h-12 w-12 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+                                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10" /></svg>
+                                            </span>
+                                            <p class="mt-4 text-sm font-semibold text-slate-700">Nenhum produto encontrado</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
+            @if ($products->isNotEmpty())
                 <div class="flex flex-col gap-4 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p class="text-sm text-slate-500">Exibindo {{ $products->firstItem() }} a {{ $products->lastItem() }} de {{ $products->total() }} registros</p>
                     @if ($products->hasPages())<div class="max-w-full">{{ $products->links('products.partials.pagination') }}</div>@endif

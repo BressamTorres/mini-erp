@@ -41,6 +41,9 @@ class SellerControllerTest extends TestCase
             ->assertSee('Cadastre e gerencie seus vendedores.')
             ->assertSee('Novo vendedor')
             ->assertSee('Foto do vendedor')
+            ->assertSee('CPF/CNPJ')
+            ->assertSee('Nenhum vendedor encontrado')
+            ->assertSee('colspan="6"', false)
             ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertSee('enctype="multipart/form-data"', false);
     }

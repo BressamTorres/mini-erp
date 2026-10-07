@@ -78,29 +78,10 @@
                         Visualizar inativos
                     </label>
 
-                    <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700">
-                        Buscar
-                    </button>
-
                 </form>
             </div>
 
-            @if ($customers->isEmpty())
-                <div class="flex min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
-                    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-violet-50 text-violet-600">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 1a3 3 0 0 1 3 3v1M16 3.2a3 3 0 0 1 0 5.6" />
-                        </svg>
-                    </span>
-                    <p class="mt-4 font-semibold text-slate-800">
-                        {{ $search !== '' ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado' }}
-                    </p>
-                    <p class="mt-1 max-w-sm text-sm text-slate-500">
-                        {{ $search !== '' ? 'Tente buscar usando outro nome, documento, telefone ou e-mail.' : 'Cadastre o primeiro cliente para começar.' }}
-                    </p>
-                </div>
-            @else
-                <div class="overflow-x-auto">
+            <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200">
                         <thead class="bg-slate-50">
                             <tr>
@@ -113,7 +94,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            @foreach ($customers as $customer)
+                            @forelse ($customers as $customer)
                                 <tr class="transition hover:bg-slate-50/80">
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm font-medium text-slate-800">{{ $customer->name }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $customer->formattedDocument() ?: '—' }}</td>
@@ -147,11 +128,25 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="h-64 px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <span class="flex h-12 w-12 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+                                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 1a3 3 0 0 1 3 3v1M16 3.2a3 3 0 0 1 0 5.6" />
+                                                </svg>
+                                            </span>
+                                            <p class="mt-4 text-sm font-semibold text-slate-700">Nenhum cliente encontrado</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
+            @if ($customers->isNotEmpty())
                 <div class="flex flex-col gap-4 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p class="text-sm text-slate-500">
                         Exibindo {{ $customers->firstItem() }} a {{ $customers->lastItem() }} de {{ $customers->total() }} registros
