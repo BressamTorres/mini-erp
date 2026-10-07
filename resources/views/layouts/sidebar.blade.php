@@ -30,8 +30,12 @@
     <nav class="flex-1 space-y-1.5 px-3 py-5" aria-label="Navegação principal">
         <a
             href="{{ route('dashboard') }}"
-            class="flex items-center gap-3 rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-3 py-2.5 text-sm font-medium text-white shadow-sm shadow-violet-200"
-            aria-current="page"
+            @class([
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-sm shadow-violet-200' => request()->routeIs('dashboard'),
+                'text-slate-600 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('dashboard'),
+            ])
+            @if (request()->routeIs('dashboard')) aria-current="page" @endif
             @click="sidebarOpen = false"
         >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -40,8 +44,23 @@
             Dashboard
         </a>
 
+        <a
+            href="{{ route('customers.index') }}"
+            @class([
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-sm shadow-violet-200' => request()->routeIs('customers.*'),
+                'text-slate-600 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('customers.*'),
+            ])
+            @if (request()->routeIs('customers.*')) aria-current="page" @endif
+            @click="sidebarOpen = false"
+        >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 1a3 3 0 0 1 3 3v1M16 3.2a3 3 0 0 1 0 5.6" />
+            </svg>
+            Clientes
+        </a>
+
         @foreach ([
-            ['Clientes', 'M4 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 1a3 3 0 0 1 3 3v1M16 3.2a3 3 0 0 1 0 5.6'],
             ['Vendedores', 'M4 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 1a3 3 0 0 1 3 3v1M16 3.2a3 3 0 0 1 0 5.6'],
             ['Produtos', 'm4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10'],
             ['Vendas', 'M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H6M10 20h.01M17 20h.01'],
@@ -59,7 +78,4 @@
         @endforeach
     </nav>
 
-    <div class="border-t border-slate-100 px-6 py-4 text-xs text-slate-400">
-        Módulos em preparação
-    </div>
 </aside>
