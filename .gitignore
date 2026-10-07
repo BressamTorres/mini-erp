@@ -25,3 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Arquivos locais de agentes de IA
+/.claude/
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md
