@@ -24,10 +24,14 @@ export default function registerProductForm(Alpine) {
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
         shouldRemovePhoto: config.removePhoto ?? false,
+        deactivateOpen: false,
+        deactivateAction: '',
+        deactivateName: '',
 
         init() {
             this.fields.sale_price = formatSalePrice(this.fields.sale_price);
             this.$watch('modalOpen', () => this.syncBodyScroll());
+            this.$watch('deactivateOpen', () => this.syncBodyScroll());
 
             if (this.modalOpen) {
                 this.focusSku();
@@ -68,8 +72,18 @@ export default function registerProductForm(Alpine) {
             this.showServerErrors = false;
         },
 
+        openDeactivate(button) {
+            this.deactivateAction = button.dataset.deactivateAction;
+            this.deactivateName = button.dataset.deactivateName;
+            this.deactivateOpen = true;
+        },
+
+        closeDeactivate() {
+            this.deactivateOpen = false;
+        },
+
         syncBodyScroll() {
-            document.body.classList.toggle('overflow-hidden', this.modalOpen);
+            document.body.classList.toggle('overflow-hidden', this.modalOpen || this.deactivateOpen);
         },
 
         focusSku() {

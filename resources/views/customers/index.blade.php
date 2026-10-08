@@ -95,7 +95,11 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             @forelse ($customers as $customer)
-                                <tr class="transition hover:bg-slate-50/80">
+                                <tr @class([
+                                    'transition',
+                                    'hover:bg-slate-50/80' => $customer->active,
+                                    'bg-[#F5F5F5] [&>td]:bg-[#F5F5F5] hover:bg-[#EEEEEE] hover:[&>td]:bg-[#EEEEEE]' => ! $customer->active,
+                                ])>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm font-medium text-slate-800">{{ $customer->name }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $customer->formattedDocument() ?: '—' }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $customer->formattedPhone() }}</td>
@@ -105,9 +109,10 @@
                                     </td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-center">
                                         <div class="inline-flex items-center justify-center gap-1.5">
-                                            <button
-                                                type="button"
-                                                class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1"
+                                            <x-grid-action-button
+                                                icon="pencil"
+                                                variant="edit"
+                                                title="Editar"
                                                 data-id="{{ $customer->id }}"
                                                 data-name="{{ $customer->name }}"
                                                 data-document="{{ $customer->document }}"
@@ -117,14 +122,19 @@
                                                 data-photo-url="{{ $customer->photoUrl() }}"
                                                 data-action="{{ route('customers.update', ['customer' => $customer->id]) }}"
                                                 @click="openEdit($el)"
-                                                title="Editar"
                                                 aria-label="Editar cliente {{ $customer->name }}"
-                                            >
-                                                <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m14.7 6.3 3 3M5 19l3.6-.7L19 7.9a2.1 2.1 0 0 0-3-3L5.7 15.3 5 19Z" />
-                                                </svg>
-                                            </button>
-
+                                            />
+                                            @if ($customer->active)
+                                                <x-grid-action-button
+                                                    icon="trash-2"
+                                                    variant="deactivate"
+                                                    title="Inativar"
+                                                    data-deactivate-action="{{ route('customers.deactivate', ['customer' => $customer->id]) }}"
+                                                    data-deactivate-name="{{ $customer->name }}"
+                                                    @click="openDeactivate($el)"
+                                                    aria-label="Inativar cliente {{ $customer->name }}"
+                                                />
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -200,6 +210,13 @@
                 </section>
             </div>
         </div>
+
+        <x-deactivate-confirmation-modal
+            id="customer-deactivate-modal"
+            title="Excluir cliente?"
+            subject="o cliente"
+            description="O cliente deixará de aparecer nas operações e seleções de novos registros, mas seu histórico será preservado."
+        />
 
     </div>
 </x-app-layout>

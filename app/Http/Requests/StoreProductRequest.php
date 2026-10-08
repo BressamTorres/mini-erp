@@ -42,7 +42,6 @@ class StoreProductRequest extends FormRequest
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')],
             'name' => ['required', 'string', 'max:255'],
             'sale_price' => ['required', 'numeric', 'gt:0'],
-            'active' => ['required', 'boolean'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:2048'],
             'remove_photo' => ['nullable', 'boolean'],
         ];

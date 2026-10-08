@@ -42,6 +42,7 @@ class PersonService
 
         $photo = $data['photo'] ?? null;
         unset($data['photo'], $data['remove_photo'], $data['type']);
+        $data['active'] = true;
 
         $photoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
 
@@ -92,6 +93,15 @@ class PersonService
         }
 
         return $updatedPerson;
+    }
+
+    public function deactivate(string $type, int $personId): Person
+    {
+        $this->ensureValidType($type);
+
+        return $this->persons->deactivate(
+            $this->persons->findOrFailByType($personId, $type),
+        );
     }
 
     private function storePhoto(UploadedFile $photo): string

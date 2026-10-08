@@ -1,8 +1,16 @@
+function normalizeOptions(options) {
+    return (options ?? []).map((option) => ({
+        ...option,
+        value: String(option.value),
+        disabled: option.disabled === true,
+    }));
+}
+
 export default function registerCombobox(Alpine) {
     Alpine.data('selectCombobox', (config) => ({
         open: false,
         value: String(config.value ?? ''),
-        options: config.options ?? [],
+        options: normalizeOptions(config.options),
         activeIndex: 0,
         placement: 'bottom',
         positioned: false,
@@ -33,7 +41,25 @@ export default function registerCombobox(Alpine) {
         },
 
         setValue(value) {
-            this.value = String(value ?? '');
+            const nextValue = String(value ?? '');
+
+            if (this.value !== nextValue) {
+                this.value = nextValue;
+            }
+        },
+
+        setOptions(options) {
+            const normalizedOptions = normalizeOptions(options);
+
+            if (JSON.stringify(this.options) === JSON.stringify(normalizedOptions)) {
+                return;
+            }
+
+            this.options = normalizedOptions;
+
+            if (this.activeIndex >= this.options.length) {
+                this.activeIndex = 0;
+            }
         },
 
         toggle() {
@@ -67,6 +93,10 @@ export default function registerCombobox(Alpine) {
         },
 
         select(option) {
+            if (!option || option.disabled) {
+                return;
+            }
+
             this.value = String(option.value);
             this.$dispatch('combobox-change', { value: this.value });
             this.close(true);
@@ -79,7 +109,13 @@ export default function registerCombobox(Alpine) {
                 return;
             }
 
-            this.activeIndex = (this.activeIndex + step + total) % total;
+            let nextIndex = this.activeIndex;
+
+            do {
+                nextIndex = (nextIndex + step + total) % total;
+            } while (this.options[nextIndex]?.disabled && nextIndex !== this.activeIndex);
+
+            this.activeIndex = nextIndex;
             this.focusOption();
         },
 

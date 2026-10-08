@@ -149,21 +149,23 @@
             <span x-cloak x-show="sidebarCollapsed" aria-hidden="true" class="invisible absolute left-full top-1/2 z-[60] ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg shadow-slate-200/70 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Produtos</span>
         </a>
 
-        @foreach ([
-            ['Vendas', 'M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H6M10 20h.01M17 20h.01'],
-        ] as [$label, $icon])
-            <span
-                class="erp-sidebar-item group relative flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500"
-                aria-label="{{ $label }}"
-                aria-disabled="true"
-            >
-                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="{{ $icon }}" />
-                </svg>
-                <span class="erp-sidebar-label">{{ $label }}</span>
-                <span x-cloak x-show="sidebarCollapsed" aria-hidden="true" class="invisible absolute left-full top-1/2 z-[60] ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg shadow-slate-200/70 transition duration-150 group-hover:visible group-hover:opacity-100">{{ $label }}</span>
-            </span>
-        @endforeach
+        <a
+            href="{{ route('sales.index') }}"
+            @class([
+                'erp-sidebar-item group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-sm shadow-violet-200' => request()->routeIs('sales.*'),
+                'text-slate-600 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('sales.*'),
+            ])
+            aria-label="Vendas"
+            @if (request()->routeIs('sales.*')) aria-current="page" @endif
+            @click="sidebarOpen = false"
+        >
+            <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20 8H6M10 20h.01M17 20h.01" />
+            </svg>
+            <span class="erp-sidebar-label">Vendas</span>
+            <span x-cloak x-show="sidebarCollapsed" aria-hidden="true" class="invisible absolute left-full top-1/2 z-[60] ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg shadow-slate-200/70 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Vendas</span>
+        </a>
     </nav>
 
 </aside>

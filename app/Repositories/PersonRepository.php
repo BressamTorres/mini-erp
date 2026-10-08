@@ -60,4 +60,11 @@ class PersonRepository
 
         return $person->refresh();
     }
+
+    public function deactivate(Person $person): Person
+    {
+        $person->update(['active' => false]);
+
+        return $person->refresh();
+    }
 }

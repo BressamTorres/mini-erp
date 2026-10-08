@@ -18,6 +18,7 @@ class UpdateProductRequest extends StoreProductRequest
             'max:100',
             Rule::unique('products', 'sku')->ignore($this->route('product')),
         ];
+        $rules['active'] = ['required', 'boolean'];
 
         return $rules;
     }

@@ -41,4 +41,12 @@ class CustomerController extends Controller
         return to_route('customers.index')
             ->with('success', 'Cliente atualizado com sucesso.');
     }
+
+    public function deactivate(int $customer): RedirectResponse
+    {
+        $this->persons->deactivate(Person::TYPE_CUSTOMER, $customer);
+
+        return to_route('customers.index')
+            ->with('success', 'Cliente inativado com sucesso.');
+    }
 }

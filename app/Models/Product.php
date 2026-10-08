@@ -6,6 +6,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['sku', 'name', 'sale_price', 'active', 'photo_path'])]
 class Product extends Model
@@ -34,5 +35,11 @@ class Product extends Model
         return $this->photo_path === null
             ? null
             : '/storage/'.ltrim($this->photo_path, '/');
+    }
+
+    /** @return HasMany<SaleItem, $this> */
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
     }
 }

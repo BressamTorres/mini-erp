@@ -42,6 +42,16 @@ class CustomerControllerTest extends TestCase
         $this->assertSame($customer->name, $customer->fresh()->name);
     }
 
+    public function test_visitor_cannot_deactivate_customer(): void
+    {
+        $customer = Person::factory()->customer()->create();
+
+        $this->patch(route('customers.deactivate', $customer))
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($customer->fresh()->active);
+    }
+
     public function test_authenticated_user_can_access_customer_list(): void
     {
         $user = User::factory()->create();
@@ -606,7 +616,7 @@ class CustomerControllerTest extends TestCase
         $this->assertTrue($customer->refresh()->active);
     }
 
-    public function test_customer_can_be_created_as_active_or_inactive(): void
+    public function test_customer_creation_ignores_manipulated_inactive_value(): void
     {
         $activePayload = $this->validPayload();
         $activePayload['active'] = '1';
@@ -618,7 +628,7 @@ class CustomerControllerTest extends TestCase
         $this->actingAs(User::factory()->create())->post(route('customers.store'), $inactivePayload)->assertSessionHasNoErrors();
 
         $this->assertTrue(Person::query()->where('type', Person::TYPE_CUSTOMER)->where('name', 'Cliente Teste')->firstOrFail()->active);
-        $this->assertFalse(Person::query()->where('type', Person::TYPE_CUSTOMER)->where('name', 'Cliente inativo')->firstOrFail()->active);
+        $this->assertTrue(Person::query()->where('type', Person::TYPE_CUSTOMER)->where('name', 'Cliente inativo')->firstOrFail()->active);
     }
 
     public function test_customer_can_change_between_active_and_inactive_without_removing_record_or_photo(): void
@@ -642,9 +652,39 @@ class CustomerControllerTest extends TestCase
         $this->assertTrue($customer->fresh()->active);
     }
 
+    public function test_authenticated_user_can_deactivate_customer_without_deleting_it(): void
+    {
+        $customer = Person::factory()->customer()->create(['name' => 'Cliente para inativar']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('customers.index'))
+            ->assertSee(route('customers.deactivate', $customer), false)
+            ->assertSee('Excluir cliente?');
+
+        $this->actingAs($user)
+            ->patch(route('customers.deactivate', $customer))
+            ->assertRedirect(route('customers.index'))
+            ->assertSessionHas('success', 'Cliente inativado com sucesso.');
+
+        $this->assertModelExists($customer);
+        $this->assertFalse($customer->fresh()->active);
+
+        $this->actingAs($user)->get(route('customers.index'))
+            ->assertDontSee($customer->name);
+        $this->actingAs($user)->get(route('customers.index', ['show_inactive' => '1']))
+            ->assertSee($customer->name)
+            ->assertDontSee(route('customers.deactivate', $customer), false);
+    }
+
     public function test_customer_delete_route_does_not_exist(): void
     {
         $this->assertFalse(Route::has('customers.destroy'));
+        $this->assertTrue(Route::has('customers.deactivate'));
+
+        $customer = Person::factory()->customer()->create();
+        $this->actingAs(User::factory()->create())
+            ->delete("/customers/{$customer->id}")
+            ->assertMethodNotAllowed();
     }
 
     /**

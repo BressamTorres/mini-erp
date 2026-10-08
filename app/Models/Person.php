@@ -6,6 +6,7 @@ use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'document', 'phone', 'email', 'photo_path', 'type', 'active'])]
 class Person extends Model
@@ -69,5 +70,17 @@ class Person extends Model
         return $this->photo_path === null
             ? null
             : '/storage/'.ltrim($this->photo_path, '/');
+    }
+
+    /** @return HasMany<Sale, $this> */
+    public function customerSales(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'customer_id');
+    }
+
+    /** @return HasMany<Sale, $this> */
+    public function sellerSales(): HasMany
+    {
+        return $this->hasMany(Sale::class, 'seller_id');
     }
 }

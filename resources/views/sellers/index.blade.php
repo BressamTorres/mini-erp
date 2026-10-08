@@ -69,7 +69,11 @@
                         </tr></thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             @forelse ($sellers as $seller)
-                                <tr class="transition hover:bg-slate-50/80">
+                                <tr @class([
+                                    'transition',
+                                    'hover:bg-slate-50/80' => $seller->active,
+                                    'bg-[#F5F5F5] [&>td]:bg-[#F5F5F5] hover:bg-[#EEEEEE] hover:[&>td]:bg-[#EEEEEE]' => ! $seller->active,
+                                ])>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm font-medium text-slate-800">{{ $seller->name }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $seller->formattedDocument() ?: '—' }}</td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm text-slate-600">{{ $seller->formattedPhone() }}</td>
@@ -77,10 +81,12 @@
                                     <td class="whitespace-nowrap px-5 py-3.5 text-sm"><x-active-status-badge :active="$seller->active" /></td>
                                     <td class="whitespace-nowrap px-5 py-3.5 text-center">
                                         <div class="inline-flex items-center justify-center gap-1.5">
-                                            <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1"
-                                                data-id="{{ $seller->id }}" data-name="{{ $seller->name }}" data-document="{{ $seller->document }}" data-phone="{{ $seller->phone }}" data-email="{{ $seller->email }}" data-active="{{ $seller->active ? '1' : '0' }}" data-photo-url="{{ $seller->photoUrl() }}" data-action="{{ route('sellers.update', ['seller' => $seller->id]) }}" @click="openEdit($el)" title="Editar" aria-label="Editar vendedor {{ $seller->name }}">
-                                                <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m14.7 6.3 3 3M5 19l3.6-.7L19 7.9a2.1 2.1 0 0 0-3-3L5.7 15.3 5 19Z" /></svg>
-                                            </button>
+                                            <x-grid-action-button icon="pencil" variant="edit" title="Editar"
+                                                data-id="{{ $seller->id }}" data-name="{{ $seller->name }}" data-document="{{ $seller->document }}" data-phone="{{ $seller->phone }}" data-email="{{ $seller->email }}" data-active="{{ $seller->active ? '1' : '0' }}" data-photo-url="{{ $seller->photoUrl() }}" data-action="{{ route('sellers.update', ['seller' => $seller->id]) }}" @click="openEdit($el)" aria-label="Editar vendedor {{ $seller->name }}" />
+                                            @if ($seller->active)
+                                                <x-grid-action-button icon="trash-2" variant="deactivate" title="Inativar"
+                                                    data-deactivate-action="{{ route('sellers.deactivate', ['seller' => $seller->id]) }}" data-deactivate-name="{{ $seller->name }}" @click="openDeactivate($el)" aria-label="Inativar vendedor {{ $seller->name }}" />
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -119,6 +125,13 @@
                 </section>
             </div>
         </div>
+
+        <x-deactivate-confirmation-modal
+            id="seller-deactivate-modal"
+            title="Excluir vendedor?"
+            subject="o vendedor"
+            description="O vendedor deixará de aparecer nas operações e seleções de novos registros, mas seu histórico será preservado."
+        />
 
     </div>
 </x-app-layout>

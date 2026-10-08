@@ -44,7 +44,6 @@ class StorePersonRequest extends FormRequest
             'document' => ['nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/'],
             'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['nullable', 'email', 'max:255'],
-            'active' => ['required', 'boolean'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:2048'],
             'remove_photo' => ['nullable', 'boolean'],
         ];

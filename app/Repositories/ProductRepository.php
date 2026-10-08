@@ -49,4 +49,11 @@ class ProductRepository
 
         return $product->refresh();
     }
+
+    public function deactivate(Product $product): Product
+    {
+        $product->update(['active' => false]);
+
+        return $product->refresh();
+    }
 }

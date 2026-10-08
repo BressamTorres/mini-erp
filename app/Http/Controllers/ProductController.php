@@ -38,4 +38,11 @@ class ProductController extends Controller
 
         return to_route('products.index')->with('success', 'Produto atualizado com sucesso.');
     }
+
+    public function deactivate(int $product): RedirectResponse
+    {
+        $this->products->deactivate($product);
+
+        return to_route('products.index')->with('success', 'Produto inativado com sucesso.');
+    }
 }

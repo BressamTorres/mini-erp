@@ -16,6 +16,16 @@ class ProductControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_visitor_cannot_deactivate_product(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->patch(route('products.deactivate', $product))
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($product->fresh()->active);
+    }
+
     public function test_visitor_cannot_access_products(): void
     {
         $this->get(route('products.index'))->assertRedirect(route('login'));
@@ -93,7 +103,7 @@ class ProductControllerTest extends TestCase
         $this->assertTrue($product->active);
     }
 
-    public function test_authenticated_user_can_create_inactive_product(): void
+    public function test_product_creation_ignores_manipulated_inactive_value(): void
     {
         $payload = $this->validPayload();
         $payload['active'] = '0';
@@ -103,10 +113,10 @@ class ProductControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
         $product = Product::query()->firstOrFail();
         $this->assertIsBool($product->active);
-        $this->assertFalse($product->active);
+        $this->assertTrue($product->active);
     }
 
-    public function test_active_is_required(): void
+    public function test_active_is_not_required_when_creating_product(): void
     {
         $payload = $this->validPayload();
         unset($payload['active']);
@@ -115,8 +125,8 @@ class ProductControllerTest extends TestCase
             ->from(route('products.index'))
             ->post(route('products.store'), $payload);
 
-        $response->assertSessionHasErrors(['active' => 'A situação é obrigatória.']);
-        $this->assertDatabaseEmpty('products');
+        $response->assertSessionHasNoErrors();
+        $this->assertTrue(Product::query()->firstOrFail()->active);
     }
 
     public function test_sku_is_required(): void
@@ -383,6 +393,36 @@ class ProductControllerTest extends TestCase
     public function test_product_delete_route_does_not_exist(): void
     {
         $this->assertFalse(Route::has('products.destroy'));
+        $this->assertTrue(Route::has('products.deactivate'));
+
+        $product = Product::factory()->create();
+        $this->actingAs(User::factory()->create())
+            ->delete("/products/{$product->id}")
+            ->assertMethodNotAllowed();
+    }
+
+    public function test_authenticated_user_can_deactivate_product_without_deleting_it(): void
+    {
+        $product = Product::factory()->create(['name' => 'Produto para inativar']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('products.index'))
+            ->assertSee(route('products.deactivate', $product), false)
+            ->assertSee('Excluir produto?');
+
+        $this->actingAs($user)
+            ->patch(route('products.deactivate', $product))
+            ->assertRedirect(route('products.index'))
+            ->assertSessionHas('success', 'Produto inativado com sucesso.');
+
+        $this->assertModelExists($product);
+        $this->assertFalse($product->fresh()->active);
+
+        $this->actingAs($user)->get(route('products.index'))
+            ->assertDontSee($product->name);
+        $this->actingAs($user)->get(route('products.index', ['show_inactive' => '1']))
+            ->assertSee($product->name)
+            ->assertDontSee(route('products.deactivate', $product), false);
     }
 
     public function test_search_finds_product_by_partial_sku(): void

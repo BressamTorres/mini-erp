@@ -39,4 +39,11 @@ class SellerController extends Controller
 
         return to_route('sellers.index')->with('success', 'Vendedor atualizado com sucesso.');
     }
+
+    public function deactivate(int $seller): RedirectResponse
+    {
+        $this->persons->deactivate(Person::TYPE_SELLER, $seller);
+
+        return to_route('sellers.index')->with('success', 'Vendedor inativado com sucesso.');
+    }
 }

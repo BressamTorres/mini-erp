@@ -33,6 +33,7 @@ class ProductService
     {
         $photo = $data['photo'] ?? null;
         unset($data['photo'], $data['remove_photo']);
+        $data['active'] = true;
 
         $photoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
 
@@ -81,6 +82,13 @@ class ProductService
         }
 
         return $updatedProduct;
+    }
+
+    public function deactivate(int $productId): Product
+    {
+        return $this->products->deactivate(
+            $this->products->findOrFail($productId),
+        );
     }
 
     private function storePhoto(UploadedFile $photo): string

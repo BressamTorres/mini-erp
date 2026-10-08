@@ -17,6 +17,16 @@ class SellerControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_visitor_cannot_deactivate_seller(): void
+    {
+        $seller = Person::factory()->seller()->create();
+
+        $this->patch(route('sellers.deactivate', $seller))
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($seller->fresh()->active);
+    }
+
     public function test_visitor_cannot_access_sellers(): void
     {
         $this->get(route('sellers.index'))->assertRedirect(route('login'));
@@ -315,7 +325,7 @@ class SellerControllerTest extends TestCase
         $this->assertTrue($seller->refresh()->active);
     }
 
-    public function test_seller_can_be_created_as_active_or_inactive(): void
+    public function test_seller_creation_ignores_manipulated_inactive_value(): void
     {
         $activePayload = $this->validPayload();
         $inactivePayload = $this->validPayload();
@@ -326,7 +336,7 @@ class SellerControllerTest extends TestCase
         $this->actingAs(User::factory()->create())->post(route('sellers.store'), $inactivePayload)->assertSessionHasNoErrors();
 
         $this->assertTrue(Person::query()->where('type', Person::TYPE_SELLER)->where('name', 'Vendedor Teste')->firstOrFail()->active);
-        $this->assertFalse(Person::query()->where('type', Person::TYPE_SELLER)->where('name', 'Vendedor inativo')->firstOrFail()->active);
+        $this->assertTrue(Person::query()->where('type', Person::TYPE_SELLER)->where('name', 'Vendedor inativo')->firstOrFail()->active);
     }
 
     public function test_seller_can_change_between_active_and_inactive_without_removing_record_or_photo(): void
@@ -466,6 +476,41 @@ class SellerControllerTest extends TestCase
                     && str_contains((string) $sellers->nextPageUrl(), 'search=Vendedor')
                     && str_contains((string) $sellers->nextPageUrl(), 'show_inactive=1');
             });
+    }
+
+    public function test_authenticated_user_can_deactivate_seller_without_deleting_it(): void
+    {
+        $seller = Person::factory()->seller()->create(['name' => 'Vendedor para inativar']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('sellers.index'))
+            ->assertSee(route('sellers.deactivate', $seller), false)
+            ->assertSee('Excluir vendedor?');
+
+        $this->actingAs($user)
+            ->patch(route('sellers.deactivate', $seller))
+            ->assertRedirect(route('sellers.index'))
+            ->assertSessionHas('success', 'Vendedor inativado com sucesso.');
+
+        $this->assertModelExists($seller);
+        $this->assertFalse($seller->fresh()->active);
+
+        $this->actingAs($user)->get(route('sellers.index'))
+            ->assertDontSee($seller->name);
+        $this->actingAs($user)->get(route('sellers.index', ['show_inactive' => '1']))
+            ->assertSee($seller->name)
+            ->assertDontSee(route('sellers.deactivate', $seller), false);
+    }
+
+    public function test_seller_has_deactivation_but_no_physical_delete_route(): void
+    {
+        $this->assertTrue(Route::has('sellers.deactivate'));
+        $this->assertFalse(Route::has('sellers.destroy'));
+
+        $seller = Person::factory()->seller()->create();
+        $this->actingAs(User::factory()->create())
+            ->delete("/sellers/{$seller->id}")
+            ->assertMethodNotAllowed();
     }
 
     /**
