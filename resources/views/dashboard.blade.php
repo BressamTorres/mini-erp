@@ -11,57 +11,111 @@
             <div x-data="dashboardPeriodFilter(@js([
                 'startDate' => $period['startDate'],
                 'endDate' => $period['endDate'],
-            ]))">
+            ]))" class="relative" @click.outside="closePeriod()" @keydown.escape.window="open && closePeriod(true)">
                 <form
                     x-ref="periodForm"
                     method="GET"
                     action="{{ route('dashboard') }}"
-                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm"
+                    @submit.prevent="applyPeriod"
                 >
-                    <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" />
-                    </svg>
+                    <input type="hidden" name="start_date" :value="startDate">
+                    <input type="hidden" name="end_date" :value="endDate">
 
-                    <div class="relative rounded-md px-1 focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2">
+                    <button
+                        x-ref="trigger"
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors hover:border-violet-200 hover:bg-violet-50/30 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                        aria-haspopup="dialog"
+                        :aria-expanded="open"
+                        aria-controls="dashboard-period-popover"
+                        @click="open ? closePeriod() : openPeriod()"
+                    >
+                        <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" />
+                        </svg>
+
                         <span
-                            class="block w-[5.75rem] text-center text-sm font-medium tabular-nums"
+                            class="w-[5.75rem] text-center font-medium tabular-nums"
                             :class="startDate ? 'text-slate-700' : 'text-slate-400'"
                             x-text="startDateLabel"
-                            aria-hidden="true"
                         >{{ $period['startDate'] ? implode('/', array_reverse(explode('-', $period['startDate']))) : 'DD/MM/AAAA' }}</span>
-                        <label for="dashboard-start-date" class="sr-only">Data inicial</label>
-                        <input
-                            id="dashboard-start-date"
-                            name="start_date"
-                            type="date"
-                            x-model="startDate"
-                            :max="endDate || null"
-                            @change="updateStartDate($event.target.value)"
-                            class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                            aria-label="Data inicial"
-                        >
-                    </div>
 
-                    <span class="text-sm text-slate-400" aria-hidden="true">→</span>
+                        <span class="text-slate-400" aria-hidden="true">→</span>
 
-                    <div class="relative rounded-md px-1 focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2">
                         <span
-                            class="block w-[5.75rem] text-center text-sm font-medium tabular-nums"
+                            class="w-[5.75rem] text-center font-medium tabular-nums"
                             :class="endDate ? 'text-slate-700' : 'text-slate-400'"
                             x-text="endDateLabel"
-                            aria-hidden="true"
                         >{{ $period['endDate'] ? implode('/', array_reverse(explode('-', $period['endDate']))) : 'DD/MM/AAAA' }}</span>
-                        <label for="dashboard-end-date" class="sr-only">Data final</label>
-                        <input
-                            id="dashboard-end-date"
-                            name="end_date"
-                            type="date"
-                            x-model="endDate"
-                            :min="startDate || null"
-                            @change="updateEndDate($event.target.value)"
-                            class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                            aria-label="Data final"
-                        >
+                    </button>
+
+                    <div
+                        id="dashboard-period-popover"
+                        x-cloak
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 -translate-y-1"
+                        class="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] max-w-[21rem] rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/60"
+                        role="dialog"
+                        aria-labelledby="dashboard-period-title"
+                    >
+                        <div class="mb-4">
+                            <h2 id="dashboard-period-title" class="text-sm font-semibold text-slate-900">Selecionar período</h2>
+                            <p class="mt-1 text-xs text-slate-500">Escolha a data inicial e a data final.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="dashboard-start-date" class="mb-1.5 block text-xs font-medium text-slate-700">Data inicial</label>
+                                <input
+                                    x-ref="startDate"
+                                    id="dashboard-start-date"
+                                    type="date"
+                                    x-model="draftStartDate"
+                                    :max="draftEndDate || null"
+                                    @input="validateDraft"
+                                    class="block w-full rounded-lg border-slate-300 text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:ring-violet-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label for="dashboard-end-date" class="mb-1.5 block text-xs font-medium text-slate-700">Data final</label>
+                                <input
+                                    id="dashboard-end-date"
+                                    type="date"
+                                    x-model="draftEndDate"
+                                    :min="draftStartDate || null"
+                                    @input="validateDraft"
+                                    class="block w-full rounded-lg border-slate-300 text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:ring-violet-500"
+                                >
+                            </div>
+                        </div>
+
+                        <p x-cloak x-show="validationMessage" x-text="validationMessage" class="mt-2 text-xs text-red-600" role="alert"></p>
+
+                        <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                            <button type="button" class="text-xs font-medium text-slate-500 transition-colors hover:text-violet-700 focus:outline-none focus:underline" @click="clearDraft">
+                                Limpar período
+                            </button>
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2" @click="closePeriod(true)">
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-violet-300"
+                                    :disabled="!canApply"
+                                    @click="applyPeriod"
+                                >
+                                    Aplicar
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
 

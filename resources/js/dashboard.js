@@ -43,6 +43,10 @@ export default function registerDashboardCharts(Alpine) {
     Alpine.data('dashboardPeriodFilter', (config) => ({
         startDate: config.startDate ?? '',
         endDate: config.endDate ?? '',
+        draftStartDate: '',
+        draftEndDate: '',
+        open: false,
+        validationMessage: '',
 
         get startDateLabel() {
             return formatDate(this.startDate);
@@ -52,28 +56,83 @@ export default function registerDashboardCharts(Alpine) {
             return formatDate(this.endDate);
         },
 
-        updateStartDate(value) {
-            this.startDate = value;
+        get canApply() {
+            const bothEmpty = !this.draftStartDate && !this.draftEndDate;
+            const completeValidPeriod = this.draftStartDate
+                && this.draftEndDate
+                && this.draftStartDate <= this.draftEndDate;
 
-            if (this.startDate && this.endDate && this.startDate > this.endDate) {
-                this.endDate = this.startDate;
-            }
-
-            this.submitPeriod();
+            return bothEmpty || completeValidPeriod;
         },
 
-        updateEndDate(value) {
-            this.endDate = value;
+        openPeriod() {
+            this.draftStartDate = this.startDate;
+            this.draftEndDate = this.endDate;
+            this.validationMessage = '';
+            this.open = true;
 
-            if (this.startDate && this.endDate && this.endDate < this.startDate) {
-                this.startDate = this.endDate;
+            this.$nextTick(() => this.$refs.startDate?.focus());
+        },
+
+        closePeriod(returnFocus = false) {
+            if (!this.open) {
+                return;
             }
+
+            this.open = false;
+            this.draftStartDate = this.startDate;
+            this.draftEndDate = this.endDate;
+            this.validationMessage = '';
+
+            if (returnFocus) {
+                this.$nextTick(() => this.$refs.trigger?.focus());
+            }
+        },
+
+        validateDraft() {
+            if (!this.draftStartDate && !this.draftEndDate) {
+                this.validationMessage = '';
+
+                return true;
+            }
+
+            if (!this.draftStartDate || !this.draftEndDate) {
+                this.validationMessage = 'Selecione a data inicial e a data final.';
+
+                return false;
+            }
+
+            if (this.draftStartDate > this.draftEndDate) {
+                this.validationMessage = 'A data inicial deve ser anterior ou igual à data final.';
+
+                return false;
+            }
+
+            this.validationMessage = '';
+
+            return true;
+        },
+
+        clearDraft() {
+            this.draftStartDate = '';
+            this.draftEndDate = '';
+            this.validationMessage = '';
+        },
+
+        applyPeriod() {
+            if (!this.validateDraft()) {
+                return;
+            }
+
+            this.startDate = this.draftStartDate;
+            this.endDate = this.draftEndDate;
+            this.open = false;
 
             this.submitPeriod();
         },
 
         submitPeriod() {
-            this.$nextTick(() => this.$refs.periodForm.requestSubmit());
+            this.$nextTick(() => this.$refs.periodForm.submit());
         },
     }));
 
