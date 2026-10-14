@@ -11,6 +11,9 @@
             'mode' => $isEditing ? 'edit' : 'create',
             'action' => $isEditing ? route('sales.update', ['sale' => $oldSaleId]) : route('sales.store'),
             'saleId' => $oldSaleId,
+            'submissionToken' => $errors->has('submission_token')
+                ? (string) Illuminate\Support\Str::uuid()
+                : (string) old('submission_token', Illuminate\Support\Str::uuid()),
             'fields' => [
                 'customer_id' => (string) old('customer_id', ''),
                 'seller_id' => (string) old('seller_id', ''),

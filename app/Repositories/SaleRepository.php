@@ -44,7 +44,7 @@ class SaleRepository
             ->with([
                 'customer:id,name,active',
                 'seller:id,name,active',
-                'items.product:id,sku,name,sale_price,photo_path,active',
+                'items.product:id,sku,name,sale_price,photo_path,photo_disk,active',
             ])
             ->findOrFail($id);
     }
@@ -65,7 +65,7 @@ class SaleRepository
         return Product::query()
             ->where('active', true)
             ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'sale_price', 'photo_path', 'active']);
+            ->get(['id', 'sku', 'name', 'sale_price', 'photo_path', 'photo_disk', 'active']);
     }
 
     public function findPersonForUpdate(int $id, string $type): ?Person
@@ -93,6 +93,14 @@ class SaleRepository
             ->with('items')
             ->lockForUpdate()
             ->findOrFail($id);
+    }
+
+    public function findByExternalOrderId(string $externalOrderId): ?Sale
+    {
+        return Sale::query()
+            ->with('items:id,sale_id,product_id,quantity')
+            ->where('external_order_id', $externalOrderId)
+            ->first();
     }
 
     /** @param array<string, mixed> $data */

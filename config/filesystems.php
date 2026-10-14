@@ -15,6 +15,12 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'legacy_photo_disk' => env('LEGACY_PHOTO_DISK', env('PHOTO_DISK', 'public')),
+
+    'person_photo_disk' => env('PERSON_PHOTO_DISK', env('PHOTO_DISK', 'public')),
+
+    'product_photo_disk' => env('PRODUCT_PHOTO_DISK', env('PHOTO_DISK', 'public')),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
@@ -41,8 +47,33 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => env('PUBLIC_STORAGE_URL', '/storage'),
             'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'r2_products' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_PRODUCTS_BUCKET'),
+            'url' => env('R2_PRODUCTS_PUBLIC_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'r2_private' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_PRIVATE_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
         ],

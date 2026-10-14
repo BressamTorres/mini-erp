@@ -56,6 +56,7 @@ class StoreSaleRequest extends FormRequest
                 Rule::exists('products', 'id')->where(fn ($query) => $query->where('active', true)),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'submission_token' => ['nullable', 'uuid'],
         ];
     }
 
@@ -78,6 +79,7 @@ class StoreSaleRequest extends FormRequest
             'items.*.quantity.required' => 'Informe a quantidade do produto.',
             'items.*.quantity.integer' => 'A quantidade deve ser um número inteiro.',
             'items.*.quantity.min' => 'A quantidade deve ser pelo menos 1.',
+            'submission_token.uuid' => 'Não foi possível identificar este envio. Tente novamente.',
         ];
     }
 }

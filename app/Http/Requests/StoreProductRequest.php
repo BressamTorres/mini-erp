@@ -42,8 +42,9 @@ class StoreProductRequest extends FormRequest
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')],
             'name' => ['required', 'string', 'max:255'],
             'sale_price' => ['required', 'numeric', 'gt:0'],
-            'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:2048'],
+            'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],
             'remove_photo' => ['nullable', 'boolean'],
+            'submission_token' => ['nullable', 'uuid'],
         ];
     }
 
@@ -68,7 +69,8 @@ class StoreProductRequest extends FormRequest
             'photo.mimes' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.extensions' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.image' => 'O arquivo enviado deve ser uma imagem válida.',
-            'photo.max' => 'A foto deve ter no máximo 2 MB.',
+            'photo.max' => 'A foto deve ter no máximo 5 MB.',
+            'submission_token.uuid' => 'Não foi possível identificar este envio. Tente novamente.',
         ];
     }
 

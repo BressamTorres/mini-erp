@@ -98,7 +98,7 @@ class CustomerControllerTest extends TestCase
         Storage::fake('public');
         $user = User::factory()->create();
         $payload = $this->validPayload();
-        $payload['photo'] = UploadedFile::fake()->image('cliente.jpg');
+        $payload['photo'] = $this->fakeImage('cliente.jpg')->size(5120);
 
         $response = $this->actingAs($user)->post(route('customers.store'), $payload);
 
@@ -128,12 +128,12 @@ class CustomerControllerTest extends TestCase
         $this->assertDatabaseEmpty('persons');
     }
 
-    public function test_customer_photo_larger_than_two_megabytes_is_rejected(): void
+    public function test_customer_photo_larger_than_five_megabytes_is_rejected(): void
     {
         Storage::fake('public');
         $user = User::factory()->create();
         $payload = $this->validPayload();
-        $payload['photo'] = UploadedFile::fake()->image('cliente.jpg')->size(2049);
+        $payload['photo'] = $this->fakeImage('cliente.jpg')->size(5121);
 
         $response = $this
             ->actingAs($user)
@@ -141,7 +141,7 @@ class CustomerControllerTest extends TestCase
             ->post(route('customers.store'), $payload);
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 2 MB.'])
+            ->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 5 MB.'])
             ->assertRedirect(route('customers.index'));
         $this->assertDatabaseEmpty('persons');
     }
@@ -387,7 +387,7 @@ class CustomerControllerTest extends TestCase
         Storage::disk('public')->put($oldPhotoPath, 'old-photo-content');
         $customer = Person::factory()->customer()->create(['photo_path' => $oldPhotoPath]);
         $payload = $this->validPayload();
-        $payload['photo'] = UploadedFile::fake()->image('new-photo.png');
+        $payload['photo'] = $this->fakeImage('new-photo.png');
 
         $response = $this->actingAs($user)->put(route('customers.update', $customer), $payload);
 

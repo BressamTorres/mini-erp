@@ -44,8 +44,9 @@ class StorePersonRequest extends FormRequest
             'document' => ['nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/'],
             'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['nullable', 'email', 'max:255'],
-            'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:2048'],
+            'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],
             'remove_photo' => ['nullable', 'boolean'],
+            'submission_token' => ['nullable', 'uuid'],
         ];
     }
 
@@ -70,7 +71,8 @@ class StorePersonRequest extends FormRequest
             'photo.mimes' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.extensions' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.image' => 'O arquivo enviado deve ser uma imagem válida.',
-            'photo.max' => 'A foto deve ter no máximo 2 MB.',
+            'photo.max' => 'A foto deve ter no máximo 5 MB.',
+            'submission_token.uuid' => 'Não foi possível identificar este envio. Tente novamente.',
         ];
     }
 

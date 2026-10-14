@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'document', 'phone', 'email', 'photo_path', 'type', 'active'])]
-class Person extends Model
+#[Fillable(['name', 'document', 'phone', 'email', 'photo_path', 'photo_disk', 'type', 'active', 'system_key'])] class Person extends Model
 {
     /** @use HasFactory<PersonFactory> */
     use HasFactory;
@@ -17,6 +16,10 @@ class Person extends Model
     public const TYPE_CUSTOMER = 'customer';
 
     public const TYPE_SELLER = 'seller';
+
+    public const SYSTEM_DEFAULT_CUSTOMER = 'default_customer';
+
+    public const SYSTEM_DEFAULT_SELLER = 'default_seller';
 
     public const TYPES = [
         self::TYPE_CUSTOMER,
@@ -69,7 +72,12 @@ class Person extends Model
     {
         return $this->photo_path === null
             ? null
-            : '/storage/'.ltrim($this->photo_path, '/');
+            : route('persons.photo', ['person' => $this->id]);
+    }
+
+    public function storedPhotoDisk(): string
+    {
+        return $this->photo_disk ?? (string) config('filesystems.legacy_photo_disk', 'public');
     }
 
     /** @return HasMany<Sale, $this> */

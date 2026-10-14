@@ -1,8 +1,9 @@
-<form method="POST" action="{{ route('sales.store') }}" x-bind:action="formAction" @submit="guardSubmit($event)">
+<form method="POST" action="{{ route('sales.store') }}" x-bind:action="formAction" @submit="guardSaleSubmit($event)">
     @csrf
     <input type="hidden" name="_method" value="PUT" x-bind:disabled="mode !== 'edit'">
     <input type="hidden" name="form_mode" x-bind:value="mode">
     <input type="hidden" name="sale_id" x-bind:value="saleId">
+    <input type="hidden" name="submission_token" x-bind:value="submissionToken">
 
     <div class="space-y-5 px-5 py-5 sm:px-6">
         <div x-show="formLoading" class="flex min-h-64 items-center justify-center text-sm text-slate-500">Carregando venda...</div>
@@ -89,7 +90,10 @@
     </div>
 
     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-        <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50" @click="closeForm">Cancelar</button>
-        <button type="submit" :disabled="! canSubmit" class="rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-200 transition hover:from-violet-700 hover:to-violet-800 disabled:cursor-not-allowed disabled:opacity-50" x-text="submitting ? 'Salvando...' : (mode === 'edit' ? 'Salvar alterações' : 'Registrar venda')">Registrar venda</button>
+        <button type="button" :disabled="submitting" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60" @click="closeForm">Cancelar</button>
+        <button type="submit" :disabled="! canSubmit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-200 transition hover:from-violet-700 hover:to-violet-800 disabled:cursor-not-allowed disabled:opacity-50">
+            <svg x-cloak x-show="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" /><path class="opacity-90" fill="currentColor" d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z" /></svg>
+            <span x-text="submitting ? 'Salvando...' : (mode === 'edit' ? 'Salvar alterações' : 'Registrar venda')">Registrar venda</span>
+        </button>
     </div>
 </form>

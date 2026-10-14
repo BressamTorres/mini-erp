@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Services\FormSubmissionService;
 use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,10 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function __construct(private ProductService $products) {}
+    public function __construct(
+        private ProductService $products,
+        private FormSubmissionService $submissions,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -27,14 +31,30 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        $this->products->create($request->validated());
+        $data = $request->safe()->except('submission_token');
+
+        $this->submissions->run(
+            'products.store',
+            (int) $request->user()->getAuthIdentifier(),
+            $request->validated('submission_token'),
+            $data,
+            fn () => $this->products->create($data),
+        );
 
         return to_route('products.index')->with('success', 'Produto cadastrado com sucesso.');
     }
 
     public function update(UpdateProductRequest $request, int $product): RedirectResponse
     {
-        $this->products->update($product, $request->validated());
+        $data = $request->safe()->except('submission_token');
+
+        $this->submissions->run(
+            "products.update.{$product}",
+            (int) $request->user()->getAuthIdentifier(),
+            $request->validated('submission_token'),
+            $data,
+            fn () => $this->products->update($product, $data),
+        );
 
         return to_route('products.index')->with('success', 'Produto atualizado com sucesso.');
     }

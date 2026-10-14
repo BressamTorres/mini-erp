@@ -1,3 +1,5 @@
+import { submissionState } from './components/submission';
+
 function formatSalePrice(value) {
     const digits = String(value ?? '').replace(/\D/g, '');
 
@@ -14,6 +16,7 @@ function formatSalePrice(value) {
 
 export default function registerProductForm(Alpine) {
     Alpine.data('productForm', (config) => ({
+        ...submissionState(config.submissionToken),
         modalOpen: config.open,
         mode: config.mode,
         formAction: config.formAction,
@@ -41,6 +44,7 @@ export default function registerProductForm(Alpine) {
         },
 
         openCreate() {
+            this.resetSubmission();
             this.mode = 'create';
             this.formAction = this.storeUrl;
             this.productId = '';
@@ -52,6 +56,7 @@ export default function registerProductForm(Alpine) {
         },
 
         openEdit(button) {
+            this.resetSubmission();
             this.mode = 'edit';
             this.formAction = button.dataset.action;
             this.productId = button.dataset.id;
@@ -68,6 +73,10 @@ export default function registerProductForm(Alpine) {
         },
 
         closeModal() {
+            if (this.submitting) {
+                return;
+            }
+
             this.modalOpen = false;
             this.showServerErrors = false;
         },

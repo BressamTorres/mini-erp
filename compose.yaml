@@ -9,6 +9,8 @@ services:
       - .:/var/www
     env_file:
       - .env
+    environment:
+      TZ: ${APP_TIMEZONE:-America/Sao_Paulo}
     depends_on:
       - redis
 

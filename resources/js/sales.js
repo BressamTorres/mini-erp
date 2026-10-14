@@ -1,3 +1,5 @@
+import { submissionState } from './components/submission';
+
 function decimalToCents(value) {
     const [integer = '0', fraction = ''] = String(value ?? '0').split('.');
 
@@ -14,6 +16,7 @@ function formatBRL(cents) {
 
 export default function registerSalesPage(Alpine) {
     Alpine.data('salesPage', (config) => ({
+        ...submissionState(config.form.submissionToken),
         detailsOpen: false,
         detailsTrigger: null,
         detailsOpenedByKeyboard: false,
@@ -40,7 +43,6 @@ export default function registerSalesPage(Alpine) {
         productOptions: [...config.products],
         historicalItems: new Map(),
         editRequestVersion: 0,
-        submitting: false,
         deactivateOpen: false,
         deactivateAction: '',
         deactivateName: '',
@@ -141,6 +143,7 @@ export default function registerSalesPage(Alpine) {
         },
 
         openCreate() {
+            this.resetSubmission();
             this.editRequestVersion += 1;
             this.mode = 'create';
             this.formAction = this.storeUrl;
@@ -152,13 +155,13 @@ export default function registerSalesPage(Alpine) {
             this.newQuantity = 1;
             this.formError = '';
             this.formLoading = false;
-            this.submitting = false;
             this.showServerErrors = false;
             this.resetOptions();
             this.formOpen = true;
         },
 
         async openEdit(detailsUrl, updateUrl) {
+            this.resetSubmission();
             const requestVersion = ++this.editRequestVersion;
 
             this.mode = 'edit';
@@ -170,7 +173,6 @@ export default function registerSalesPage(Alpine) {
             this.selectedProductId = '';
             this.newQuantity = 1;
             this.formError = '';
-            this.submitting = false;
             this.showServerErrors = false;
             this.formLoading = true;
             this.resetOptions();
@@ -327,22 +329,25 @@ export default function registerSalesPage(Alpine) {
         },
 
         closeForm() {
+            if (this.submitting) {
+                return;
+            }
+
             this.editRequestVersion += 1;
             this.formOpen = false;
             this.formLoading = false;
-            this.submitting = false;
             this.showServerErrors = false;
             window.dispatchEvent(new CustomEvent('close-comboboxes'));
         },
 
-        guardSubmit(event) {
+        guardSaleSubmit(event) {
             if (!this.canSubmit) {
                 event.preventDefault();
 
                 return;
             }
 
-            this.submitting = true;
+            this.guardSubmit(event);
         },
 
         openDeactivate(button) {

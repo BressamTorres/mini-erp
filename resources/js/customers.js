@@ -1,3 +1,5 @@
+import { submissionState } from './components/submission';
+
 function onlyDigits(value, limit) {
     return String(value ?? '').replace(/\D/g, '').slice(0, limit);
 }
@@ -37,6 +39,7 @@ function formatDocument(value) {
 
 export default function registerCustomerForm(Alpine) {
     Alpine.data('customerForm', (config) => ({
+        ...submissionState(config.submissionToken),
         modalOpen: config.open,
         mode: config.mode,
         formAction: config.formAction,
@@ -66,6 +69,7 @@ export default function registerCustomerForm(Alpine) {
         },
 
         openCreate() {
+            this.resetSubmission();
             this.mode = 'create';
             this.formAction = this.storeUrl;
             this.customerId = '';
@@ -77,6 +81,7 @@ export default function registerCustomerForm(Alpine) {
         },
 
         openEdit(button) {
+            this.resetSubmission();
             this.mode = 'edit';
             this.formAction = button.dataset.action;
             this.customerId = button.dataset.id;
@@ -94,6 +99,10 @@ export default function registerCustomerForm(Alpine) {
         },
 
         closeModal() {
+            if (this.submitting) {
+                return;
+            }
+
             this.modalOpen = false;
             this.showServerErrors = false;
         },

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateSaleRequest;
+use App\Services\FormSubmissionService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,10 @@ use Illuminate\View\View;
 
 class SaleController extends Controller
 {
-    public function __construct(private SaleService $sales) {}
+    public function __construct(
+        private SaleService $sales,
+        private FormSubmissionService $submissions,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -40,14 +44,30 @@ class SaleController extends Controller
 
     public function store(StoreSaleRequest $request): RedirectResponse
     {
-        $this->sales->create($request->validated());
+        $data = $request->safe()->except('submission_token');
+
+        $this->submissions->run(
+            'sales.store',
+            (int) $request->user()->getAuthIdentifier(),
+            $request->validated('submission_token'),
+            $data,
+            fn () => $this->sales->create($data),
+        );
 
         return to_route('sales.index')->with('success', 'Venda registrada com sucesso.');
     }
 
     public function update(UpdateSaleRequest $request, int $sale): RedirectResponse
     {
-        $this->sales->update($sale, $request->validated());
+        $data = $request->safe()->except('submission_token');
+
+        $this->submissions->run(
+            "sales.update.{$sale}",
+            (int) $request->user()->getAuthIdentifier(),
+            $request->validated('submission_token'),
+            $data,
+            fn () => $this->sales->update($sale, $data),
+        );
 
         return to_route('sales.index')->with('success', 'Venda atualizada com sucesso.');
     }

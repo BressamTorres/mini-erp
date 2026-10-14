@@ -50,6 +50,11 @@ class PersonRepository
             ->findOrFail($id);
     }
 
+    public function findOrFail(int $id): Person
+    {
+        return Person::query()->findOrFail($id);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */

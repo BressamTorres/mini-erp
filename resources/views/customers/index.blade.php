@@ -10,6 +10,9 @@
         'formAction' => $formAction,
         'storeUrl' => route('customers.store'),
         'customerId' => $oldCustomerId,
+        'submissionToken' => $errors->has('submission_token')
+            ? (string) Illuminate\Support\Str::uuid()
+            : (string) old('submission_token', Illuminate\Support\Str::uuid()),
         'photoUrl' => '',
         'removePhoto' => old('remove_photo') === '1',
         'fields' => [

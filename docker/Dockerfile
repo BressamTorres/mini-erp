@@ -1,5 +1,9 @@
 FROM php:8.4-fpm
 
+ENV TZ=America/Sao_Paulo
+
+RUN echo "date.timezone=${TZ}" > /usr/local/etc/php/conf.d/timezone.ini
+
 WORKDIR /var/www
 
 RUN apt-get update && apt-get install -y \

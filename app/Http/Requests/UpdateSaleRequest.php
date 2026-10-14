@@ -53,6 +53,7 @@ class UpdateSaleRequest extends StoreSaleRequest
                 Rule::exists('products', 'id'),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'submission_token' => ['nullable', 'uuid'],
         ];
     }
 

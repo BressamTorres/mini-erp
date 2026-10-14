@@ -49,12 +49,18 @@ class SaleService
             $this->eligiblePerson((int) $data['seller_id'], Person::TYPE_SELLER, 'seller_id');
 
             $items = $this->prepareItems($data['items']);
-            $sale = $this->sales->create([
+            $saleData = [
                 'customer_id' => $data['customer_id'],
                 'seller_id' => $data['seller_id'],
                 'total' => $this->sumItems($items),
                 'active' => true,
-            ]);
+            ];
+
+            if (isset($data['external_order_id'])) {
+                $saleData['external_order_id'] = $data['external_order_id'];
+            }
+
+            $sale = $this->sales->create($saleData);
             $this->sales->replaceItems($sale, $items);
 
             return $sale->refresh();

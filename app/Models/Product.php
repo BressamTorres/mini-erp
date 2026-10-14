@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['sku', 'name', 'sale_price', 'active', 'photo_path'])]
+#[Fillable(['sku', 'name', 'sale_price', 'active', 'photo_path', 'photo_disk'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
@@ -34,7 +35,12 @@ class Product extends Model
     {
         return $this->photo_path === null
             ? null
-            : '/storage/'.ltrim($this->photo_path, '/');
+            : Storage::disk($this->storedPhotoDisk())->url($this->photo_path);
+    }
+
+    public function storedPhotoDisk(): string
+    {
+        return $this->photo_disk ?? (string) config('filesystems.legacy_photo_disk', 'public');
     }
 
     /** @return HasMany<SaleItem, $this> */
