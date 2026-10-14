@@ -1,0 +1,70 @@
+# Environment files and credentials
+/.env
+/.env.*
+!/.env.example
+/auth.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Version control and local tooling
+/.git
+/.gitattributes
+/.gitignore
+/.github
+/.ai
+/.claude
+/.codex
+/.cursor
+/.idea
+/.nova
+/.vscode
+/.zed
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md
+
+# Dependencies rebuilt during the image build
+/node_modules
+/vendor
+
+# Runtime data, uploaded files, logs and caches
+/public/hot
+/public/storage
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/framework/cache/locks/*
+!/storage/framework/cache/locks/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# Tests, reports and local development artifacts
+/tests
+/coverage
+/playwright-report
+/test-results
+/.playwright-cli
+/.phpunit.cache
+/.phpunit.result.cache
+/phpunit.xml
+*.log
+
+# Files not required by the PHP runtime image
+/.DS_Store
+/README.md
+/compose.yaml
+/docker-compose*.yml
+/docker-compose*.yaml
