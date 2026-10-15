@@ -9,6 +9,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -108,6 +109,66 @@ class RegistrationTest extends TestCase
         $response
             ->assertSessionHasErrors('password')
             ->assertSessionHasErrors(['password' => 'A confirmação da senha não corresponde.']);
+    }
+
+    #[DataProvider('businessPhoneProvider')]
+    public function test_registration_normalizes_fixed_and_mobile_phones(string $phone, string $normalizedPhone): void
+    {
+        $response = $this->post('/register', $this->validRegistration([
+            'business_phone' => $phone,
+        ]));
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $business = User::query()->where('email', 'test@example.com')->sole()->business;
+        $this->assertSame($normalizedPhone, $business->phone);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function businessPhoneProvider(): array
+    {
+        return [
+            'masked fixed phone' => ['(44) 3333-4444', '4433334444'],
+            'unmasked fixed phone' => ['4433334444', '4433334444'],
+            'masked mobile phone' => ['(44) 99999-9999', '44999999999'],
+            'unmasked mobile phone' => ['44999999999', '44999999999'],
+        ];
+    }
+
+    #[DataProvider('businessDocumentProvider')]
+    public function test_registration_normalizes_valid_cpf_and_cnpj_documents(string $document, string $normalizedDocument): void
+    {
+        $response = $this->post('/register', $this->validRegistration([
+            'business_document' => $document,
+        ]));
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $business = User::query()->where('email', 'test@example.com')->sole()->business;
+        $this->assertSame($normalizedDocument, $business->document);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function businessDocumentProvider(): array
+    {
+        return [
+            'masked CPF' => ['529.982.247-25', '52998224725'],
+            'unmasked CPF' => ['52998224725', '52998224725'],
+            'masked numeric CNPJ' => ['11.222.333/0001-81', '11222333000181'],
+            'unmasked numeric CNPJ' => ['11222333000181', '11222333000181'],
+            'masked alphanumeric CNPJ' => ['12.ABC.345/01DE-35', '12ABC34501DE35'],
+            'unmasked alphanumeric CNPJ' => ['12ABC34501DE35', '12ABC34501DE35'],
+        ];
+    }
+
+    public function test_registration_rejects_phone_with_more_than_eleven_digits(): void
+    {
+        $response = $this->post('/register', $this->validRegistration([
+            'business_phone' => '(44) 99999-99999',
+        ]));
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors([
+            'business_phone' => 'Informe um telefone com 10 ou 11 dígitos.',
+        ]);
     }
 
     public function test_registration_is_rate_limited(): void

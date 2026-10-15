@@ -1,6 +1,7 @@
 
 
 import Alpine from 'alpinejs';
+import registerRegistrationForm from './auth/registration';
 import registerCombobox from './components/combobox';
 import registerCustomerForm from './customers';
 import registerDashboardCharts from './dashboard';
@@ -10,6 +11,7 @@ import registerSellerForm from './sellers';
 
 window.Alpine = Alpine;
 
+registerRegistrationForm(Alpine);
 registerCombobox(Alpine);
 registerCustomerForm(Alpine);
 registerDashboardCharts(Alpine);

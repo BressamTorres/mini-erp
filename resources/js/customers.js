@@ -1,25 +1,6 @@
 import { submissionState } from './components/submission';
 import { documentValidationMessage, formatDocument } from './components/person-document';
-
-function onlyDigits(value, limit) {
-    return String(value ?? '').replace(/\D/g, '').slice(0, limit);
-}
-
-function formatPhone(value) {
-    const digits = onlyDigits(value, 11);
-
-    if (digits.length <= 2) {
-        return digits.length > 0 ? `(${digits}` : '';
-    }
-
-    const areaCode = digits.slice(0, 2);
-    const subscriber = digits.slice(2);
-    const prefixLength = digits.length === 11 ? 5 : 4;
-    const prefix = subscriber.slice(0, prefixLength);
-    const suffix = subscriber.slice(prefixLength);
-
-    return `(${areaCode}) ${prefix}${suffix ? `-${suffix}` : ''}`;
-}
+import { formatPhone } from './components/phone';
 
 export default function registerCustomerForm(Alpine) {
     Alpine.data('customerForm', (config) => ({

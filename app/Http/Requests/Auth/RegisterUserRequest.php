@@ -53,13 +53,20 @@ class RegisterUserRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $businessDocument = preg_replace(
+            '/[^A-Z0-9]/',
+            '',
+            Str::upper((string) $this->input('business_document')),
+        ) ?? '';
+        $businessPhone = preg_replace('/\D/', '', (string) $this->input('business_phone')) ?? '';
+
         $this->merge([
             'name' => trim((string) $this->input('name')),
             'email' => Str::lower(trim((string) $this->input('email'))),
             'business_trade_name' => trim((string) $this->input('business_trade_name')),
             'business_legal_name' => trim((string) $this->input('business_legal_name')),
-            'business_document' => Str::upper(str_replace(['.', '/', '-', ' '], '', (string) $this->input('business_document'))),
-            'business_phone' => str_replace(['(', ')', '.', '-', ' '], '', (string) $this->input('business_phone')),
+            'business_document' => $businessDocument,
+            'business_phone' => $businessPhone,
             'business_email' => Str::lower(trim((string) $this->input('business_email'))),
         ]);
     }

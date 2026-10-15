@@ -9,11 +9,12 @@
     <form
         method="POST"
         action="{{ route('register') }}"
-        x-data="{
-            step: @js($errors->hasAny(['business_trade_name', 'business_legal_name', 'business_document', 'business_phone', 'business_email']) ? 2 : 1),
-            showPassword: false,
-            showPasswordConfirmation: false
-        }"
+        x-data="registrationForm({{ Js::from([
+            'step' => $errors->hasAny(['business_trade_name', 'business_legal_name', 'business_document', 'business_phone', 'business_email']) ? 2 : 1,
+            'businessDocument' => old('business_document', ''),
+            'businessPhone' => old('business_phone', ''),
+        ]) }})"
+        @submit="submitForm($event)"
         class="space-y-5"
     >
         @csrf
@@ -93,13 +94,14 @@
 
             <div>
                 <label for="business_document" class="mb-2 block text-sm font-medium text-slate-700">CPF/CNPJ</label>
-                <input id="business_document" type="text" name="business_document" value="{{ old('business_document') }}" required inputmode="text" class="block w-full rounded-lg border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-violet-500 focus:ring-violet-500">
-                <x-input-error :messages="$errors->get('business_document')" class="mt-2" />
+                <input id="business_document" x-ref="businessDocument" x-model="businessDocument" @input="maskDocument($event)" @blur="validateDocument" type="text" name="business_document" required maxlength="18" inputmode="text" autocapitalize="characters" spellcheck="false" x-bind:aria-invalid="documentError !== ''" x-bind:class="documentError ? 'border-rose-300 focus:border-rose-400' : 'border-slate-300 focus:border-violet-500'" class="block w-full rounded-lg px-3.5 py-2.5 text-sm shadow-sm focus:ring-violet-500">
+                <p x-cloak x-show="documentError" x-text="documentError" class="mt-2 text-sm text-rose-600"></p>
+                <x-input-error :messages="$errors->get('business_document')" x-show="! documentError" class="mt-2" />
             </div>
 
             <div>
                 <label for="business_phone" class="mb-2 block text-sm font-medium text-slate-700">Telefone</label>
-                <input id="business_phone" type="tel" name="business_phone" value="{{ old('business_phone') }}" required autocomplete="tel" class="block w-full rounded-lg border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-violet-500 focus:ring-violet-500">
+                <input id="business_phone" x-model="businessPhone" @input="maskPhone($event)" type="tel" name="business_phone" required maxlength="15" autocomplete="tel" inputmode="tel" class="block w-full rounded-lg border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-violet-500 focus:ring-violet-500">
                 <x-input-error :messages="$errors->get('business_phone')" class="mt-2" />
             </div>
 
