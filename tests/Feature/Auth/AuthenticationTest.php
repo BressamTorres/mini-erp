@@ -17,6 +17,8 @@ class AuthenticationTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Infinit ERP')
+            ->assertSee('Criar conta')
+            ->assertSee(route('register'))
             ->assertDontSee('Esqueceu a senha?');
     }
 

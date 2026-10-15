@@ -65,4 +65,11 @@
             Entrar
         </button>
     </form>
+
+    <p class="mt-6 text-center text-sm text-slate-600">
+        Ainda não tem conta?
+        <a href="{{ route('register') }}" class="font-semibold text-violet-600 hover:text-violet-700 focus:outline-none focus:underline">
+            Criar conta
+        </a>
+    </p>
 </x-guest-layout>
