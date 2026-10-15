@@ -10,10 +10,21 @@ return new class extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained('persons')->restrictOnDelete();
-            $table->foreignId('seller_id')->constrained('persons')->restrictOnDelete();
+            $table->foreignId('business_id')->constrained()->restrictOnDelete();
+            $table->unsignedBigInteger('customer_id');
+            $table->unsignedBigInteger('seller_id');
             $table->decimal('total', 10, 2);
             $table->timestamps();
+
+            $table->foreign(['customer_id', 'business_id'])
+                ->references(['id', 'business_id'])
+                ->on('persons')
+                ->restrictOnDelete();
+            $table->foreign(['seller_id', 'business_id'])
+                ->references(['id', 'business_id'])
+                ->on('persons')
+                ->restrictOnDelete();
+            $table->unique(['id', 'business_id']);
         });
     }
 

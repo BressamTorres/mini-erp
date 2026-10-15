@@ -95,7 +95,8 @@ class ProductControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['active'] = '1';
 
-        $response = $this->actingAs(User::factory()->create())->post(route('products.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('products.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $product = Product::query()->firstOrFail();
@@ -108,7 +109,8 @@ class ProductControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['active'] = '0';
 
-        $response = $this->actingAs(User::factory()->create())->post(route('products.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('products.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $product = Product::query()->firstOrFail();
@@ -214,12 +216,13 @@ class ProductControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['photo'] = $this->fakeImage('produto.jpg')->size(5120);
 
-        $response = $this->actingAs(User::factory()->create())->post(route('products.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('products.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $product = Product::query()->firstOrFail();
         $this->assertNotNull($product->photo_path);
-        $this->assertStringStartsWith('products/', $product->photo_path);
+        $this->assertStringStartsWith("businesses/{$user->business_id}/products/", $product->photo_path);
         $this->assertNotSame('products/produto.jpg', $product->photo_path);
         Storage::disk('public')->assertExists($product->photo_path);
     }

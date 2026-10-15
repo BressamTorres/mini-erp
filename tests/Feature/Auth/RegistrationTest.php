@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Business;
 use App\Models\User;
+use App\Services\BusinessContext;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -24,36 +26,38 @@ class RegistrationTest extends TestCase
             ->assertSee('Confirmar senha');
     }
 
-    public function test_new_users_can_register_and_are_authenticated_without_global_permissions(): void
+    public function test_new_users_can_register_a_business_and_are_authenticated_as_its_administrator(): void
     {
         Event::fake([Registered::class]);
 
-        $response = $this->post('/register', [
+        $response = $this->post('/register', $this->validRegistration([
             'name' => '  Maria da Silva  ',
             'email' => 'MARIA@EXAMPLE.COM',
-            'password' => 'secure-password',
-            'password_confirmation' => 'secure-password',
-        ]);
+        ]));
 
         $user = User::query()->where('email', 'maria@example.com')->firstOrFail();
+        $business = Business::query()->findOrFail($user->business_id);
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame('Maria da Silva', $user->name);
+        $this->assertSame('Empresa Teste', $business->trade_name);
+        $this->assertSame('11222333000181', $business->document);
         $this->assertTrue(Hash::check('secure-password', $user->password));
-        $this->assertFalse($user->roles()->exists());
-        $this->assertFalse($user->permissions()->exists());
+        app(BusinessContext::class)->run($business, function () use ($user): void {
+            $this->assertTrue($user->hasRole('administrador'));
+            $this->assertSame($user->business_id, $user->roles()->sole()->business_id);
+        });
         Event::assertDispatched(Registered::class, fn (Registered $event): bool => $event->user->is($user));
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
     public function test_registered_user_can_log_out_and_log_in(): void
     {
-        $credentials = [
+        $credentials = $this->validRegistration([
             'name' => 'João Pereira',
             'email' => 'joao@example.com',
-            'password' => 'secure-password',
-            'password_confirmation' => 'secure-password',
-        ];
+            'business_document' => '52998224725',
+        ]);
 
         $this->post('/register', $credentials);
         $this->post('/logout');
@@ -71,12 +75,10 @@ class RegistrationTest extends TestCase
     {
         User::factory()->create(['email' => 'existing@example.com']);
 
-        $response = $this->post('/register', [
+        $response = $this->post('/register', $this->validRegistration([
             'name' => 'Another User',
             'email' => 'EXISTING@EXAMPLE.COM',
-            'password' => 'secure-password',
-            'password_confirmation' => 'secure-password',
-        ]);
+        ]));
 
         $this->assertGuest();
         $this->assertDatabaseCount('users', 1);
@@ -87,12 +89,10 @@ class RegistrationTest extends TestCase
 
     public function test_registration_rejects_a_short_password(): void
     {
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $response = $this->post('/register', $this->validRegistration([
             'password' => 'short',
             'password_confirmation' => 'short',
-        ]);
+        ]));
 
         $this->assertGuest();
         $response->assertSessionHasErrors('password');
@@ -100,12 +100,9 @@ class RegistrationTest extends TestCase
 
     public function test_registration_rejects_a_password_without_matching_confirmation(): void
     {
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'secure-password',
+        $response = $this->post('/register', $this->validRegistration([
             'password_confirmation' => 'different-password',
-        ]);
+        ]));
 
         $this->assertGuest();
         $response
@@ -131,5 +128,24 @@ class RegistrationTest extends TestCase
 
         $this->post('/register', $invalidRegistration)
             ->assertTooManyRequests();
+    }
+
+    /** @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    private function validRegistration(array $overrides = []): array
+    {
+        return [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'secure-password',
+            'password_confirmation' => 'secure-password',
+            'business_trade_name' => 'Empresa Teste',
+            'business_legal_name' => 'Empresa Teste Ltda.',
+            'business_document' => '11.222.333/0001-81',
+            'business_phone' => '(11) 99999-9999',
+            'business_email' => 'empresa@example.com',
+            ...$overrides,
+        ];
     }
 }

@@ -10,15 +10,15 @@ return new class extends Migration
     {
         Schema::table('sales', function (Blueprint $table) {
             $table->uuid('external_order_id')
-                ->nullable()
-                ->unique();
+                ->nullable();
+            $table->unique(['business_id', 'external_order_id']);
         });
     }
 
     public function down(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->dropUnique(['external_order_id']);
+            $table->dropUnique(['business_id', 'external_order_id']);
             $table->dropColumn('external_order_id');
         });
     }

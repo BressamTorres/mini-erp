@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Business;
+use App\Services\BusinessContext;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
@@ -13,9 +14,11 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::firstOrCreate([
-            'name' => 'administrador',
-            'guard_name' => 'web',
-        ]);
+        Business::query()->eachById(function (Business $business): void {
+            app(BusinessContext::class)->run(
+                $business,
+                fn (): Role => Role::findOrCreate('administrador', 'web'),
+            );
+        });
     }
 }

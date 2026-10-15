@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\BusinessContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -39,7 +40,14 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')],
+            'sku' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('products', 'sku')->where(
+                    fn ($query) => $query->where('business_id', app(BusinessContext::class)->id()),
+                ),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'sale_price' => ['required', 'numeric', 'gt:0'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],

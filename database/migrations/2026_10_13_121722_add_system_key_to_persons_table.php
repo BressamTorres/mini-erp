@@ -10,15 +10,15 @@ return new class extends Migration
     {
         Schema::table('persons', function (Blueprint $table) {
             $table->string('system_key', 50)
-                ->nullable()
-                ->unique();
+                ->nullable();
+            $table->unique(['business_id', 'system_key']);
         });
     }
 
     public function down(): void
     {
         Schema::table('persons', function (Blueprint $table) {
-            $table->dropUnique(['system_key']);
+            $table->dropUnique(['business_id', 'system_key']);
             $table->dropColumn('system_key');
         });
     }

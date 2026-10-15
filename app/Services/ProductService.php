@@ -13,8 +13,6 @@ use Throwable;
 
 class ProductService
 {
-    private const PHOTO_DIRECTORY = 'products';
-
     public function __construct(
         private ProductRepository $products,
         private PhotoRepository $photos,
@@ -99,7 +97,7 @@ class ProductService
 
     private function storePhoto(UploadedFile $photo): string
     {
-        $path = $photo->store(self::PHOTO_DIRECTORY, $this->photoDisk());
+        $path = $photo->store($this->photoDirectory(), $this->photoDisk());
 
         if ($path === false) {
             throw new RuntimeException('Não foi possível armazenar a foto do produto.');
@@ -118,5 +116,10 @@ class ProductService
     private function photoDisk(): string
     {
         return (string) config('filesystems.product_photo_disk', 'public');
+    }
+
+    private function photoDirectory(): string
+    {
+        return 'businesses/'.app(BusinessContext::class)->id().'/products';
     }
 }

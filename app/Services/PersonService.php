@@ -15,8 +15,6 @@ use Throwable;
 
 class PersonService
 {
-    private const PHOTO_DIRECTORY = 'persons';
-
     public function __construct(
         private PersonRepository $persons,
         private PhotoRepository $photos,
@@ -129,7 +127,7 @@ class PersonService
 
     private function storePhoto(UploadedFile $photo): string
     {
-        $path = $photo->store(self::PHOTO_DIRECTORY, $this->photoDisk());
+        $path = $photo->store($this->photoDirectory(), $this->photoDisk());
 
         if ($path === false) {
             throw new RuntimeException('Não foi possível armazenar a foto da pessoa.');
@@ -148,6 +146,11 @@ class PersonService
     private function photoDisk(): string
     {
         return (string) config('filesystems.person_photo_disk', 'public');
+    }
+
+    private function photoDirectory(): string
+    {
+        return 'businesses/'.app(BusinessContext::class)->id().'/persons';
     }
 
     private function ensureValidType(string $type): void

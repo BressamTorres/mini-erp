@@ -114,7 +114,7 @@ class CustomerControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
         $customer = Person::query()->where('type', Person::TYPE_CUSTOMER)->firstOrFail();
         $this->assertNotNull($customer->photo_path);
-        $this->assertStringStartsWith('persons/', $customer->photo_path);
+        $this->assertStringStartsWith("businesses/{$user->business_id}/persons/", $customer->photo_path);
         $this->assertNotSame('persons/cliente.jpg', $customer->photo_path);
         Storage::disk('public')->assertExists($customer->photo_path);
     }

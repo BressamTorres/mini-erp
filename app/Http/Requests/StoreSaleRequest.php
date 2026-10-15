@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Person;
+use App\Services\BusinessContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,6 +39,7 @@ class StoreSaleRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('persons', 'id')->where(fn ($query) => $query
+                    ->where('business_id', app(BusinessContext::class)->id())
                     ->where('type', Person::TYPE_CUSTOMER)
                     ->where('active', true)),
             ],
@@ -45,6 +47,7 @@ class StoreSaleRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('persons', 'id')->where(fn ($query) => $query
+                    ->where('business_id', app(BusinessContext::class)->id())
                     ->where('type', Person::TYPE_SELLER)
                     ->where('active', true)),
             ],
@@ -53,7 +56,9 @@ class StoreSaleRequest extends FormRequest
                 'required',
                 'integer',
                 'distinct',
-                Rule::exists('products', 'id')->where(fn ($query) => $query->where('active', true)),
+                Rule::exists('products', 'id')->where(fn ($query) => $query
+                    ->where('business_id', app(BusinessContext::class)->id())
+                    ->where('active', true)),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'submission_token' => ['nullable', 'uuid'],

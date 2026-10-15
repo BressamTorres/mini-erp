@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Person;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\BusinessContext;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -22,6 +23,7 @@ class UpdateSaleRequest extends StoreSaleRequest
                 'required',
                 'integer',
                 Rule::exists('persons', 'id')->where(fn ($query) => $query
+                    ->where('business_id', app(BusinessContext::class)->id())
                     ->where('type', Person::TYPE_CUSTOMER)
                     ->where(fn ($query) => $query
                         ->where('active', true)
@@ -31,6 +33,7 @@ class UpdateSaleRequest extends StoreSaleRequest
                 'required',
                 'integer',
                 Rule::exists('persons', 'id')->where(fn ($query) => $query
+                    ->where('business_id', app(BusinessContext::class)->id())
                     ->where('type', Person::TYPE_SELLER)
                     ->where(fn ($query) => $query
                         ->where('active', true)
@@ -43,14 +46,18 @@ class UpdateSaleRequest extends StoreSaleRequest
                 'integer',
                 'distinct',
                 Rule::exists('sale_items', 'id')->where(
-                    fn ($query) => $query->where('sale_id', $sale?->id ?? 0),
+                    fn ($query) => $query
+                        ->where('business_id', app(BusinessContext::class)->id())
+                        ->where('sale_id', $sale?->id ?? 0),
                 ),
             ],
             'items.*.product_id' => [
                 'required',
                 'integer',
                 'distinct',
-                Rule::exists('products', 'id'),
+                Rule::exists('products', 'id')->where(
+                    fn ($query) => $query->where('business_id', app(BusinessContext::class)->id()),
+                ),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'submission_token' => ['nullable', 'uuid'],

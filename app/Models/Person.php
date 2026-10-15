@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['name', 'document', 'phone', 'email', 'photo_path', 'photo_disk', 'type', 'active', 'system_key'])] class Person extends Model
 {
     /** @use HasFactory<PersonFactory> */
-    use HasFactory;
+    use BelongsToBusiness, HasFactory;
 
     public const TYPE_CUSTOMER = 'customer';
 

@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('persons', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')->constrained()->restrictOnDelete();
             $table->string('name');
             $table->string('document', 20)->nullable();
             $table->string('phone', 30);
@@ -18,6 +19,9 @@ return new class extends Migration
             $table->string('type', 20)->index();
             $table->boolean('active')->default(true);
             $table->timestamps();
+
+            $table->index(['business_id', 'type', 'active']);
+            $table->unique(['id', 'business_id']);
         });
     }
 

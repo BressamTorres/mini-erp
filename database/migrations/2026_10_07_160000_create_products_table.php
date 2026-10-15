@@ -10,11 +10,15 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('sku', 100)->unique();
+            $table->foreignId('business_id')->constrained()->restrictOnDelete();
+            $table->string('sku', 100);
             $table->string('name');
             $table->decimal('sale_price', 15, 2);
             $table->string('photo_path')->nullable();
             $table->timestamps();
+
+            $table->unique(['business_id', 'sku']);
+            $table->unique(['id', 'business_id']);
         });
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\BusinessContext;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends StoreProductRequest
@@ -16,7 +17,9 @@ class UpdateProductRequest extends StoreProductRequest
             'required',
             'string',
             'max:100',
-            Rule::unique('products', 'sku')->ignore($this->route('product')),
+            Rule::unique('products', 'sku')
+                ->where(fn ($query) => $query->where('business_id', app(BusinessContext::class)->id()))
+                ->ignore($this->route('product')),
         ];
         $rules['active'] = ['required', 'boolean'];
 

@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             $table->boolean('active')->default(true)->after('sale_price');
+            $table->index(['business_id', 'active']);
         });
     }
 
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
+            $table->dropIndex(['business_id', 'active']);
             $table->dropColumn('active');
         });
     }

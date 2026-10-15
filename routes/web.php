@@ -7,11 +7,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SellerController;
+use App\Http\Middleware\SetBusinessContext;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', SetBusinessContext::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('verified')
         ->name('dashboard');

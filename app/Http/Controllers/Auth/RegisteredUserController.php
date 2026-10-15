@@ -4,15 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterUserRequest;
-use App\Models\User;
+use App\Services\BusinessRegistrationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    public function __construct(private BusinessRegistrationService $registrations) {}
+
     /**
      * Display the registration view.
      */
@@ -28,11 +29,7 @@ class RegisteredUserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user = $this->registrations->create($validated);
 
         event(new Registered($user));
 

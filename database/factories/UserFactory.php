@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Business;
 use App\Models\User;
+use App\Services\BusinessContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -25,6 +27,9 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'business_id' => fn () => app(BusinessContext::class)->has()
+                ? app(BusinessContext::class)->id()
+                : Business::factory(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

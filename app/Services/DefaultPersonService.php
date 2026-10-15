@@ -27,7 +27,10 @@ class DefaultPersonService
 
     private function findOrCreate(string $key, string $type, string $name): Person
     {
+        $businessId = app(BusinessContext::class)->id();
+
         DB::table('persons')->insertOrIgnore([
+            'business_id' => $businessId,
             'system_key' => $key,
             'type' => $type,
             'name' => $name,

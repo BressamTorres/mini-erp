@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Business;
+use App\Services\BusinessContext;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
@@ -13,8 +14,6 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
-
         if (! config('erp.admin.enabled')) {
             return;
         }
@@ -28,17 +27,29 @@ class AdminUserSeeder extends Seeder
             return;
         }
 
-        $administrator = User::query()->updateOrCreate(
-            ['email' => $email],
+        $business = Business::query()->updateOrCreate(
+            ['document' => (string) config('erp.admin.business.document')],
             [
-                'name' => (string) config('erp.admin.name'),
-                'password' => $password,
-                'email_verified_at' => now(),
+                'trade_name' => (string) config('erp.admin.business.trade_name'),
+                'legal_name' => (string) config('erp.admin.business.legal_name'),
+                'phone' => (string) config('erp.admin.business.phone'),
+                'email' => (string) config('erp.admin.business.email'),
             ],
         );
 
-        $administrator->syncRoles([
-            Role::findByName('administrador', 'web'),
-        ]);
+        app(BusinessContext::class)->run($business, function () use ($business, $email, $password): void {
+            $administrator = $business->users()->updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => (string) config('erp.admin.name'),
+                    'password' => $password,
+                    'email_verified_at' => now(),
+                ],
+            );
+
+            $administrator->syncRoles([
+                Role::findOrCreate('administrador', 'web'),
+            ]);
+        });
     }
 }

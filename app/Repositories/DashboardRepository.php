@@ -26,7 +26,9 @@ class DashboardRepository
                 ->distinct()
                 ->count('sales.customer_id'),
             'productsSold' => (int) $this->activeSalesQuery($startDate, $endDate)
-                ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('sale_items', fn ($join) => $join
+                    ->on('sale_items.sale_id', '=', 'sales.id')
+                    ->on('sale_items.business_id', '=', 'sales.business_id'))
                 ->sum('sale_items.quantity'),
         ];
     }
@@ -45,7 +47,9 @@ class DashboardRepository
     public function salesBySeller(?CarbonInterface $startDate, ?CarbonInterface $endDate): Collection
     {
         return $this->activeSalesQuery($startDate, $endDate)
-            ->join('persons as sellers', 'sellers.id', '=', 'sales.seller_id')
+            ->join('persons as sellers', fn ($join) => $join
+                ->on('sellers.id', '=', 'sales.seller_id')
+                ->on('sellers.business_id', '=', 'sales.business_id'))
             ->where('sellers.type', Person::TYPE_SELLER)
             ->selectRaw('sellers.id as seller_id, sellers.name as seller_name, COALESCE(SUM(sales.total), 0) as total')
             ->groupBy('sellers.id', 'sellers.name')

@@ -84,7 +84,8 @@ class SellerControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['document'] = '012.345.678-90';
 
-        $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $seller = Person::query()->where('type', Person::TYPE_SELLER)->firstOrFail();
@@ -109,7 +110,8 @@ class SellerControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['document'] = '12.345.678/0001-95';
 
-        $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $this->assertDatabaseHas('persons', ['document' => '12345678000195']);
@@ -211,12 +213,13 @@ class SellerControllerTest extends TestCase
         $payload = $this->validPayload();
         $payload['photo'] = $this->fakeImage('vendedor.jpg')->size(5120);
 
-        $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
         $seller = Person::query()->where('type', Person::TYPE_SELLER)->firstOrFail();
         $this->assertNotNull($seller->photo_path);
-        $this->assertStringStartsWith('persons/', $seller->photo_path);
+        $this->assertStringStartsWith("businesses/{$user->business_id}/persons/", $seller->photo_path);
         $this->assertNotSame('persons/vendedor.jpg', $seller->photo_path);
         Storage::disk('public')->assertExists($seller->photo_path);
     }

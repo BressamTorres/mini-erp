@@ -58,7 +58,7 @@ class DuplicateSubmissionTest extends TestCase
         $this->assertDatabaseCount('persons', 1);
         $customer = Person::query()->firstOrFail();
         $this->assertSame('r2_private', $customer->photo_disk);
-        $this->assertCount(1, Storage::disk('r2_private')->allFiles('persons'));
+        $this->assertCount(1, Storage::disk('r2_private')->allFiles('businesses/'.$user->business_id.'/persons'));
     }
 
     public function test_duplicate_seller_submission_creates_one_record(): void
@@ -108,7 +108,7 @@ class DuplicateSubmissionTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame($firstPhotoPath, $product->fresh()->photo_path);
-        $this->assertSame([$firstPhotoPath], Storage::disk('r2_products')->allFiles('products'));
+        $this->assertSame([$firstPhotoPath], Storage::disk('r2_products')->allFiles('businesses/'.$user->business_id.'/products'));
     }
 
     public function test_duplicate_sale_submission_creates_one_sale(): void
