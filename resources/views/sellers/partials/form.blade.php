@@ -18,7 +18,7 @@
 
             <div>
                 <label for="seller-document" class="mb-2 block text-sm font-medium text-slate-700">CPF/CNPJ</label>
-                <input id="seller-document" name="document" type="text" maxlength="18" inputmode="numeric" x-ref="sellerDocument" x-bind:value="fields.document" @input="maskDocument($event)" @blur="validateDocument" x-bind:aria-invalid="documentError !== ''" x-bind:class="documentError ? 'border-rose-300 focus:border-rose-400' : ''"
+                <input id="seller-document" name="document" type="text" maxlength="18" inputmode="text" autocapitalize="characters" spellcheck="false" x-ref="sellerDocument" x-bind:value="fields.document" @input="maskDocument($event)" @blur="validateDocument" x-bind:aria-invalid="documentError !== ''" x-bind:class="documentError ? 'border-rose-300 focus:border-rose-400' : ''"
                     @class(['block w-full rounded-lg px-3.5 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:ring-violet-500', 'border-rose-300 focus:border-rose-400' => $errors->has('document'), 'border-slate-300 focus:border-violet-500' => ! $errors->has('document')])
                     placeholder="000.000.000-00">
                 <p x-cloak x-show="documentError" x-text="documentError" class="mt-1.5 text-sm text-rose-600"></p>

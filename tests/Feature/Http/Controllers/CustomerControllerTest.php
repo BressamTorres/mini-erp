@@ -70,6 +70,15 @@ class CustomerControllerTest extends TestCase
             ->assertSee('enctype="multipart/form-data"', false);
     }
 
+    public function test_customer_list_formats_alphanumeric_cnpj(): void
+    {
+        Person::factory()->customer()->create(['document' => '12ABC34501DE35']);
+
+        $response = $this->actingAs(User::factory()->create())->get(route('customers.index'));
+
+        $response->assertSee('12.ABC.345/01DE-35');
+    }
+
     public function test_valid_name_and_phone_create_customer(): void
     {
         $user = User::factory()->create();
@@ -153,7 +162,7 @@ class CustomerControllerTest extends TestCase
         $response = $this->actingAs($user)->post(route('customers.store'), [
             'id' => 999,
             'name' => 'Empresa Exemplo Ltda',
-            'document' => '12.345.678/0001-90',
+            'document' => '12.345.678/0001-95',
             'phone' => '(11) 3333-4444',
             'email' => 'contato@empresa.com.br',
             'active' => '1',
@@ -162,7 +171,7 @@ class CustomerControllerTest extends TestCase
         $response->assertRedirect(route('customers.index'));
         $this->assertDatabaseHas('persons', [
             'name' => 'Empresa Exemplo Ltda',
-            'document' => '12345678000190',
+            'document' => '12345678000195',
             'phone' => '1133334444',
             'email' => 'contato@empresa.com.br',
         ]);
@@ -321,16 +330,52 @@ class CustomerControllerTest extends TestCase
         ];
     }
 
-    public function test_cnpj_is_stored_without_formatting(): void
+    #[DataProvider('validCnpjDocuments')]
+    public function test_valid_numeric_and_alphanumeric_cnpj_is_normalized(string $document, string $normalizedDocument): void
     {
         $user = User::factory()->create();
         $payload = $this->validPayload();
-        $payload['document'] = '12.345.678/0001-90';
+        $payload['document'] = $document;
 
         $response = $this->actingAs($user)->post(route('customers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('persons', ['document' => '12345678000190']);
+        $this->assertDatabaseHas('persons', ['document' => $normalizedDocument]);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function validCnpjDocuments(): array
+    {
+        return [
+            'formatted numeric' => ['12.345.678/0001-95', '12345678000195'],
+            'numeric without mask' => ['12345678000195', '12345678000195'],
+            'formatted alphanumeric lowercase' => ['12.abc.345/01de-35', '12ABC34501DE35'],
+            'alphanumeric without mask' => ['12ABC34501DE35', '12ABC34501DE35'],
+        ];
+    }
+
+    #[DataProvider('invalidCnpjs')]
+    public function test_invalid_cnpj_is_rejected_when_creating_customer(string $document): void
+    {
+        $payload = $this->validPayload();
+        $payload['document'] = $document;
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('customers.index'))
+            ->post(route('customers.store'), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CNPJ inválido. Verifique o número informado.']);
+        $this->assertDatabaseEmpty('persons');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function invalidCnpjs(): array
+    {
+        return [
+            'numeric invalid check digits' => ['12.345.678/0001-90'],
+            'alphanumeric invalid check digits' => ['12.ABC.345/01DE-34'],
+            'repeated sequence' => ['00.000.000/0000-00'],
+        ];
     }
 
     public function test_phone_is_stored_without_formatting(): void
@@ -354,7 +399,7 @@ class CustomerControllerTest extends TestCase
 
         $response = $this->actingAs($user)->put(route('customers.update', $customer), [
             'name' => 'Nome atualizado',
-            'document' => '98.765.432/0001-10',
+            'document' => '98.765.432/0001-98',
             'phone' => '(22) 22222-2222',
             'email' => 'atualizado@example.com',
             'active' => '1',
@@ -367,7 +412,7 @@ class CustomerControllerTest extends TestCase
         $this->assertDatabaseHas('persons', [
             'id' => $customer->id,
             'name' => 'Nome atualizado',
-            'document' => '98765432000110',
+            'document' => '98765432000198',
             'phone' => '22222222222',
             'email' => 'atualizado@example.com',
             'active' => '1',
@@ -407,6 +452,20 @@ class CustomerControllerTest extends TestCase
 
         $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
         $this->assertSame('52998224725', $customer->fresh()->document);
+    }
+
+    public function test_invalid_cnpj_is_rejected_when_updating_customer(): void
+    {
+        $customer = Person::factory()->customer()->create(['document' => '12345678000195']);
+        $payload = $this->validPayload();
+        $payload['document'] = '12.ABC.345/01DE-34';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('customers.index'))
+            ->put(route('customers.update', $customer), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CNPJ inválido. Verifique o número informado.']);
+        $this->assertSame('12345678000195', $customer->fresh()->document);
     }
 
     public function test_update_without_new_photo_keeps_current_photo(): void

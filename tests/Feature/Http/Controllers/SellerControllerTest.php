@@ -107,12 +107,25 @@ class SellerControllerTest extends TestCase
     public function test_seller_can_be_created_with_cnpj_stored_without_formatting(): void
     {
         $payload = $this->validPayload();
-        $payload['document'] = '12.345.678/0001-90';
+        $payload['document'] = '12.345.678/0001-95';
 
         $response = $this->actingAs(User::factory()->create())->post(route('sellers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('persons', ['document' => '12345678000190']);
+        $this->assertDatabaseHas('persons', ['document' => '12345678000195']);
+    }
+
+    public function test_invalid_cnpj_is_rejected_when_creating_seller(): void
+    {
+        $payload = $this->validPayload();
+        $payload['document'] = '12.ABC.345/01DE-34';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('sellers.index'))
+            ->post(route('sellers.store'), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CNPJ inválido. Verifique o número informado.']);
+        $this->assertDatabaseEmpty('persons');
     }
 
     #[DataProvider('invalidDocuments')]
@@ -125,14 +138,18 @@ class SellerControllerTest extends TestCase
             ->from(route('sellers.index'))
             ->post(route('sellers.store'), $payload);
 
-        $response->assertSessionHasErrors(['document' => 'Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.']);
+        $response->assertSessionHasErrors(['document' => 'Informe um CPF com 11 dígitos ou CNPJ com 14 caracteres.']);
         $this->assertDatabaseEmpty('persons');
     }
 
     /** @return array<string, array{string}> */
     public static function invalidDocuments(): array
     {
-        return ['ten digits' => ['1234567890'], 'twelve digits' => ['123456789012']];
+        return [
+            'ten digits' => ['1234567890'],
+            'twelve digits' => ['123456789012'],
+            'incomplete alphanumeric cnpj' => ['12ABC34501DE3'],
+        ];
     }
 
     public function test_name_is_required(): void
@@ -258,12 +275,12 @@ class SellerControllerTest extends TestCase
     {
         $seller = Person::factory()->seller()->create(['document' => '12345678901']);
         $payload = $this->validPayload();
-        $payload['document'] = '98.765.432/0001-10';
+        $payload['document'] = '12.abc.345/01de-35';
 
         $response = $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertSame('98765432000110', $seller->fresh()->document);
+        $this->assertSame('12ABC34501DE35', $seller->fresh()->document);
     }
 
     public function test_invalid_cpf_is_rejected_when_updating_seller(): void
@@ -278,6 +295,20 @@ class SellerControllerTest extends TestCase
 
         $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
         $this->assertSame('11144477735', $seller->fresh()->document);
+    }
+
+    public function test_invalid_cnpj_is_rejected_when_updating_seller(): void
+    {
+        $seller = Person::factory()->seller()->create(['document' => '12ABC34501DE35']);
+        $payload = $this->validPayload();
+        $payload['document'] = '12.345.678/0001-90';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('sellers.index'))
+            ->put(route('sellers.update', $seller), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CNPJ inválido. Verifique o número informado.']);
+        $this->assertSame('12ABC34501DE35', $seller->fresh()->document);
     }
 
     public function test_authenticated_user_can_remove_seller_document(): void
@@ -401,8 +432,8 @@ class SellerControllerTest extends TestCase
             'name' => ['Localizável', 'name', 'Vendedor Localizável'],
             'cpf without mask' => ['01234567890', 'document', '01234567890'],
             'cpf with mask' => ['012.345.678-90', 'document', '01234567890'],
-            'cnpj without mask' => ['12345678000190', 'document', '12345678000190'],
-            'cnpj with mask' => ['12.345.678/0001-90', 'document', '12345678000190'],
+            'cnpj without mask' => ['12345678000195', 'document', '12345678000195'],
+            'cnpj with mask' => ['12.345.678/0001-95', 'document', '12345678000195'],
             'phone without mask' => ['44988887777', 'phone', '44988887777'],
             'phone with mask' => ['(44) 98888-7777', 'phone', '44988887777'],
             'email' => ['busca@example.com', 'email', 'busca@example.com'],

@@ -49,7 +49,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
         }
 
         if (strlen($this->document) === 14) {
-            return preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $this->document) ?? $this->document;
+            return preg_replace('/^([A-Z0-9]{2})([A-Z0-9]{3})([A-Z0-9]{3})([A-Z0-9]{4})(\d{2})$/', '$1.$2.$3/$4-$5', $this->document) ?? $this->document;
         }
 
         return $this->document;

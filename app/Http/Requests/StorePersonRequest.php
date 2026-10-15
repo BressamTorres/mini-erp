@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\Cnpj;
 use App\Rules\Cpf;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -19,7 +20,7 @@ class StorePersonRequest extends FormRequest
         $normalized = [
             'document' => $document === null || $document === ''
                 ? null
-                : $this->removeFormatting($document),
+                : $this->normalizeDocument($document),
             'phone' => $this->removeFormatting($this->input('phone', '')),
         ];
 
@@ -42,7 +43,7 @@ class StorePersonRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'document' => ['bail', 'nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/', new Cpf],
+            'document' => ['bail', 'nullable', 'string', 'regex:/^(?:\d{11}|[A-Z0-9]{12}\d{2})$/', new Cpf, new Cnpj],
             'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],
@@ -61,7 +62,7 @@ class StorePersonRequest extends FormRequest
             'name.string' => 'O nome deve ser um texto.',
             'name.max' => 'O nome deve ter no máximo 255 caracteres.',
             'document.string' => 'O CPF/CNPJ deve ser um texto.',
-            'document.regex' => 'Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.',
+            'document.regex' => 'Informe um CPF com 11 dígitos ou CNPJ com 14 caracteres.',
             'phone.required' => 'O telefone é obrigatório.',
             'phone.string' => 'O telefone deve ser um texto.',
             'phone.regex' => 'Informe um telefone com 10 ou 11 dígitos.',
@@ -84,5 +85,12 @@ class StorePersonRequest extends FormRequest
         }
 
         return str_replace(['(', ')', '.', '/', '-', ' '], '', $value);
+    }
+
+    private function normalizeDocument(mixed $value): mixed
+    {
+        $document = $this->removeFormatting($value);
+
+        return is_string($document) ? strtoupper($document) : $document;
     }
 }
