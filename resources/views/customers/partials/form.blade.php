@@ -1,4 +1,4 @@
-<form method="POST" action="{{ route('customers.store') }}" enctype="multipart/form-data" x-bind:action="formAction" @submit="guardSubmit($event)">
+<form method="POST" action="{{ route('customers.store') }}" enctype="multipart/form-data" x-bind:action="formAction" @submit="submitForm($event)">
     @csrf
     <input type="hidden" name="_method" value="PUT" disabled x-bind:disabled="mode !== 'edit'">
     <input type="hidden" name="form_mode" x-bind:value="mode">
@@ -41,8 +41,12 @@
                     type="text"
                     maxlength="18"
                     inputmode="numeric"
+                    x-ref="customerDocument"
                     x-bind:value="fields.document"
                     @input="maskDocument($event)"
+                    @blur="validateDocument"
+                    x-bind:aria-invalid="documentError !== ''"
+                    x-bind:class="documentError ? 'border-rose-300 focus:border-rose-400' : ''"
                     @class([
                         'block w-full rounded-lg px-3.5 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:ring-violet-500',
                         'border-rose-300 focus:border-rose-400' => $errors->has('document'),
@@ -50,8 +54,9 @@
                     ])
                     placeholder="000.000.000-00"
                 >
+                <p x-cloak x-show="documentError" x-text="documentError" class="mt-1.5 text-sm text-rose-600"></p>
                 @error('document')
-                    <p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                    <p x-show="showServerErrors && ! documentError" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
                 @enderror
             </div>
 

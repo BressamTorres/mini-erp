@@ -1,4 +1,5 @@
 import { submissionState } from './components/submission';
+import { documentValidationMessage, formatDocument } from './components/person-document';
 
 function onlyDigits(value, limit) {
     return String(value ?? '').replace(/\D/g, '').slice(0, limit);
@@ -20,23 +21,6 @@ function formatPhone(value) {
     return `(${areaCode}) ${prefix}${suffix ? `-${suffix}` : ''}`;
 }
 
-function formatDocument(value) {
-    const digits = onlyDigits(value, 14);
-
-    if (digits.length <= 11) {
-        return digits
-            .replace(/^(\d{3})(\d)/, '$1.$2')
-            .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-            .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-    }
-
-    return digits
-        .replace(/^(\d{2})(\d)/, '$1.$2')
-        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-        .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3/$4')
-        .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, '$1.$2.$3/$4-$5');
-}
-
 export default function registerCustomerForm(Alpine) {
     Alpine.data('customerForm', (config) => ({
         ...submissionState(config.submissionToken),
@@ -46,6 +30,7 @@ export default function registerCustomerForm(Alpine) {
         storeUrl: config.storeUrl,
         customerId: config.customerId,
         fields: config.fields,
+        documentError: '',
         showServerErrors: config.open,
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
@@ -74,6 +59,7 @@ export default function registerCustomerForm(Alpine) {
             this.formAction = this.storeUrl;
             this.customerId = '';
             this.fields = { name: '', document: '', phone: '', email: '', active: '1' };
+            this.documentError = '';
             this.resetPhoto();
             this.showServerErrors = false;
             this.modalOpen = true;
@@ -92,6 +78,7 @@ export default function registerCustomerForm(Alpine) {
                 email: button.dataset.email,
                 active: button.dataset.active,
             };
+            this.documentError = '';
             this.resetPhoto(button.dataset.photoUrl);
             this.showServerErrors = false;
             this.modalOpen = true;
@@ -171,6 +158,24 @@ export default function registerCustomerForm(Alpine) {
 
             event.target.value = value;
             this.fields.document = value;
+            this.documentError = '';
+        },
+
+        validateDocument() {
+            this.documentError = documentValidationMessage(this.fields.document);
+
+            return this.documentError === '';
+        },
+
+        submitForm(event) {
+            if (!this.validateDocument()) {
+                event.preventDefault();
+                this.$nextTick(() => this.$refs.customerDocument?.focus());
+
+                return;
+            }
+
+            this.guardSubmit(event);
         },
 
         maskPhone(event) {

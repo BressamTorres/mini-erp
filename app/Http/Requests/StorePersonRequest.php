@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\Cpf;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -41,7 +42,7 @@ class StorePersonRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'document' => ['nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/'],
+            'document' => ['bail', 'nullable', 'string', 'regex:/^(?:\d{11}|\d{14})$/', new Cpf],
             'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['nullable', 'email', 'max:255'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],

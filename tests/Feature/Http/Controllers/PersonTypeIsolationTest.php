@@ -136,7 +136,7 @@ class PersonTypeIsolationTest extends TestCase
     {
         return [
             'name' => $name,
-            'document' => '123.456.789-00',
+            'document' => '529.982.247-25',
             'phone' => '(44) 99999-0000',
             'email' => 'pessoa@example.com',
             'active' => '1',

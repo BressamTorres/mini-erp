@@ -276,15 +276,49 @@ class CustomerControllerTest extends TestCase
         $this->assertSame('01234567890', $customer->document);
     }
 
-    public function test_cpf_is_stored_without_formatting(): void
+    #[DataProvider('validCpfDocuments')]
+    public function test_valid_cpf_is_stored_without_formatting(string $document): void
     {
         $user = User::factory()->create();
         $payload = $this->validPayload();
+        $payload['document'] = $document;
 
         $response = $this->actingAs($user)->post(route('customers.store'), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('persons', ['document' => '12345678900']);
+        $this->assertDatabaseHas('persons', ['document' => '52998224725']);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function validCpfDocuments(): array
+    {
+        return [
+            'formatted' => ['529.982.247-25'],
+            'digits only' => ['52998224725'],
+        ];
+    }
+
+    #[DataProvider('invalidCpfs')]
+    public function test_invalid_cpf_is_rejected_when_creating_customer(string $document): void
+    {
+        $payload = $this->validPayload();
+        $payload['document'] = $document;
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('customers.index'))
+            ->post(route('customers.store'), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
+        $this->assertDatabaseEmpty('persons');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function invalidCpfs(): array
+    {
+        return [
+            'invalid check digits' => ['529.982.247-24'],
+            'repeated sequence' => ['111.111.111-11'],
+        ];
     }
 
     public function test_cnpj_is_stored_without_formatting(): void
@@ -359,6 +393,20 @@ class CustomerControllerTest extends TestCase
             'document' => '01234567890',
             'phone' => '04433334444',
         ]);
+    }
+
+    public function test_invalid_cpf_is_rejected_when_updating_customer(): void
+    {
+        $customer = Person::factory()->customer()->create(['document' => '52998224725']);
+        $payload = $this->validPayload();
+        $payload['document'] = '529.982.247-24';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('customers.index'))
+            ->put(route('customers.update', $customer), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
+        $this->assertSame('52998224725', $customer->fresh()->document);
     }
 
     public function test_update_without_new_photo_keeps_current_photo(): void
@@ -694,7 +742,7 @@ class CustomerControllerTest extends TestCase
     {
         return [
             'name' => 'Cliente Teste',
-            'document' => '123.456.789-00',
+            'document' => '529.982.247-25',
             'phone' => '(44) 99999-0000',
             'email' => 'cliente@example.com',
             'active' => '1',

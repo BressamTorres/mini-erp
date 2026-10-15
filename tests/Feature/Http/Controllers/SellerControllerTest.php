@@ -91,6 +91,19 @@ class SellerControllerTest extends TestCase
         $this->assertSame('01234567890', $seller->document);
     }
 
+    public function test_invalid_cpf_is_rejected_when_creating_seller(): void
+    {
+        $payload = $this->validPayload();
+        $payload['document'] = '000.000.000-00';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('sellers.index'))
+            ->post(route('sellers.store'), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
+        $this->assertDatabaseEmpty('persons');
+    }
+
     public function test_seller_can_be_created_with_cnpj_stored_without_formatting(): void
     {
         $payload = $this->validPayload();
@@ -251,6 +264,20 @@ class SellerControllerTest extends TestCase
 
         $response->assertSessionHasNoErrors();
         $this->assertSame('98765432000110', $seller->fresh()->document);
+    }
+
+    public function test_invalid_cpf_is_rejected_when_updating_seller(): void
+    {
+        $seller = Person::factory()->seller()->create(['document' => '11144477735']);
+        $payload = $this->validPayload();
+        $payload['document'] = '111.444.777-34';
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('sellers.index'))
+            ->put(route('sellers.update', $seller), $payload);
+
+        $response->assertSessionHasErrors(['document' => 'CPF inválido. Verifique o número informado.']);
+        $this->assertSame('11144477735', $seller->fresh()->document);
     }
 
     public function test_authenticated_user_can_remove_seller_document(): void
@@ -520,7 +547,7 @@ class SellerControllerTest extends TestCase
     {
         return [
             'name' => 'Vendedor Teste',
-            'document' => '123.456.789-00',
+            'document' => '529.982.247-25',
             'phone' => '(44) 99999-0000',
             'email' => 'vendedor@example.com',
             'active' => '1',
