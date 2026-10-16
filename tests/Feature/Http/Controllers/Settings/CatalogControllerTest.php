@@ -44,6 +44,7 @@ class CatalogControllerTest extends TestCase
             ->assertSee('Copiar link')
             ->assertSee('Abrir catálogo')
             ->assertDontSee('WhatsApp')
+            ->assertDontSee('Aponte a câmera do celular para acessar.')
             ->assertDontSee('outra-empresa')
             ->assertDontSee('token-que-nao-pode-aparecer')
             ->assertDontSee('<script>alert("xss")</script>', false)

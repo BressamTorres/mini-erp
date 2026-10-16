@@ -53,18 +53,17 @@
                     </div>
                 </section>
 
-                <aside class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm sm:p-5">
+                <aside class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
                     <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4h5v5H4V4Zm11 0h5v5h-5V4ZM4 15h5v5H4v-5Zm11 0h2v2h-2v-2Zm3 0h2v5h-5v-2m3-3v3m-3-7h5v2h-5v-2Zm-4 0h2v5h-2v-5Z" />
                         </svg>
                     </span>
                     <h2 class="mt-2 font-semibold leading-tight text-slate-900">QR Code do catálogo</h2>
-                    <p class="mt-1 text-sm text-slate-500">Aponte a câmera do celular para acessar.</p>
 
                     @if ($qrCodeUrl !== null)
-                        <div class="mt-3 rounded-lg border border-slate-200 bg-white p-2">
-                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-[9.375rem] max-w-full">
+                        <div class="mt-2 rounded-lg border border-slate-200 bg-white p-2">
+                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-[11rem] max-w-full">
                         </div>
                     @else
                         <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
