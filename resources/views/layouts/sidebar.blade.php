@@ -197,12 +197,12 @@
                 x-transition:enter="transition ease-out duration-150"
                 x-transition:enter-start="-translate-y-1 opacity-0"
                 x-transition:enter-end="translate-y-0 opacity-100"
-                class="space-y-1 pl-11 pr-2"
+                class="space-y-1 px-1"
             >
                 <a
                     href="{{ route('settings.business.edit') }}"
                     @class([
-                        'block rounded-lg px-3 py-2 text-sm transition',
+                        'block w-full rounded-lg px-3 py-2 text-sm transition',
                         'bg-violet-50 font-semibold text-violet-700' => request()->routeIs('settings.business.*'),
                         'text-slate-500 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('settings.business.*'),
                     ])
@@ -212,7 +212,7 @@
                 <a
                     href="{{ route('settings.catalog.show') }}"
                     @class([
-                        'block rounded-lg px-3 py-2 text-sm transition',
+                        'block w-full rounded-lg px-3 py-2 text-sm transition',
                         'bg-violet-50 font-semibold text-violet-700' => request()->routeIs('settings.catalog.*'),
                         'text-slate-500 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('settings.catalog.*'),
                     ])
