@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 #[Fillable(['trade_name', 'legal_name', 'document', 'phone', 'email'])]
 #[Hidden(['catalog_api_token'])]
@@ -33,6 +34,20 @@ class Business extends Model
         return [
             'catalog_api_token_expires_at' => 'datetime',
         ];
+    }
+
+    public function displayName(): string
+    {
+        $tradeName = trim((string) $this->trade_name);
+
+        return $tradeName !== ''
+            ? $tradeName
+            : trim((string) $this->legal_name);
+    }
+
+    public function displayInitial(): string
+    {
+        return Str::upper(Str::substr($this->displayName(), 0, 1));
     }
 
     /** @return HasMany<User, $this> */
