@@ -6,6 +6,10 @@ return [
         'rate_limit_per_minute' => (int) env('CATALOG_API_RATE_LIMIT_PER_MINUTE', 60),
     ],
 
+    'catalog' => [
+        'credentials_key' => env('CATALOG_CREDENTIAL_KEY', env('APP_KEY')),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

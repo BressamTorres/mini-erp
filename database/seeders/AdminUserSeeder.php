@@ -4,13 +4,17 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Services\BusinessContext;
+use App\Services\CatalogCredentialService;
 use App\Services\DefaultPersonService;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
 class AdminUserSeeder extends Seeder
 {
-    public function __construct(private DefaultPersonService $defaultPeople) {}
+    public function __construct(
+        private DefaultPersonService $defaultPeople,
+        private CatalogCredentialService $catalogCredentials,
+    ) {}
 
     /**
      * Run the database seeds.
@@ -55,6 +59,14 @@ class AdminUserSeeder extends Seeder
             ]);
 
             $this->defaultPeople->ensureDefaults();
+
+            if (
+                empty($business->catalog_api_token)
+                || $business->catalog_api_token_expires_at === null
+                || $business->catalog_api_token_expires_at->isPast()
+            ) {
+                $this->catalogCredentials->rotate($administrator);
+            }
         });
     }
 }

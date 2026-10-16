@@ -3,7 +3,9 @@
 namespace Tests\Feature\Console\Commands;
 
 use App\Models\User;
+use App\Services\CatalogCredentialService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
 class RotateCatalogTokenTest extends TestCase
@@ -29,6 +31,12 @@ class RotateCatalogTokenTest extends TestCase
         $catalogToken = $user->tokens()->where('name', 'catalog')->sole();
         $this->assertSame(['catalog:sales:create'], $catalogToken->abilities);
         $this->assertSame(now()->addDay()->toDateTimeString(), $catalogToken->expires_at?->toDateTimeString());
+        $business = $user->business->fresh();
+        $this->assertSame(now()->addDay()->toDateTimeString(), $business->catalog_api_token_expires_at?->toDateTimeString());
+        $this->assertSame(
+            $catalogToken->id,
+            PersonalAccessToken::findToken(app(CatalogCredentialService::class)->decryptToken($business))?->id,
+        );
     }
 
     public function test_does_not_issue_token_for_unknown_user(): void
