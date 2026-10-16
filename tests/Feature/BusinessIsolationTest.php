@@ -101,9 +101,13 @@ class BusinessIsolationTest extends TestCase
         [$firstBusiness, $firstUser] = $this->currentBusinessAndUser();
         $firstProduct = Product::factory()->create();
         [$secondBusiness, $secondUser] = $this->anotherBusinessAndUser();
-        $secondProduct = app(BusinessContext::class)->run(
+        [$secondCustomer, $secondSeller, $secondProduct] = app(BusinessContext::class)->run(
             $secondBusiness,
-            fn (): Product => Product::factory()->create(),
+            fn (): array => [
+                Person::factory()->customer()->create(),
+                Person::factory()->seller()->create(),
+                Product::factory()->create(),
+            ],
         );
         $externalOrderId = (string) Str::uuid();
 
@@ -115,6 +119,16 @@ class BusinessIsolationTest extends TestCase
             ])->assertForbidden();
 
         $this->withHeader('X-Business-ID', (string) $firstBusiness->id);
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer_id' => $secondCustomer->id,
+            'items' => [['product_id' => $firstProduct->id, 'quantity' => 1]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('customer_id');
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'seller_id' => $secondSeller->id,
+            'items' => [['product_id' => $firstProduct->id, 'quantity' => 1]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('seller_id');
         $this->postJson(route('api.catalog.sales.store'), [
             'external_order_id' => $externalOrderId,
             'items' => [['product_id' => $secondProduct->id, 'quantity' => 1]],

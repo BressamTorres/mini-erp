@@ -32,10 +32,21 @@ class CatalogSaleControllerTest extends TestCase
 
     public function test_returns_403_when_token_lacks_required_ability(): void
     {
-        Sanctum::actingAs(User::factory()->create(), ['catalog:products:read']);
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['catalog:products:read']);
+
+        $this->withHeader('X-Business-ID', (string) $user->business_id)
+            ->postJson(route('api.catalog.sales.store'), [])
+            ->assertForbidden();
+    }
+
+    public function test_returns_403_when_business_header_is_missing(): void
+    {
+        Sanctum::actingAs(User::factory()->create(), ['catalog:sales:create']);
 
         $this->postJson(route('api.catalog.sales.store'), [])
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertJsonPath('message', 'A empresa informada não corresponde ao token do Catálogo.');
     }
 
     public function test_returns_422_when_required_fields_are_missing(): void
@@ -343,6 +354,8 @@ class CatalogSaleControllerTest extends TestCase
 
     private function authenticateCatalog(): void
     {
-        Sanctum::actingAs(User::factory()->create(), ['catalog:sales:create']);
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['catalog:sales:create']);
+        $this->withHeader('X-Business-ID', (string) $user->business_id);
     }
 }

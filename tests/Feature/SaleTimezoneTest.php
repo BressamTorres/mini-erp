@@ -46,16 +46,18 @@ class SaleTimezoneTest extends TestCase
     public function test_catalog_sale_is_stored_and_read_in_sao_paulo_time(): void
     {
         $this->travelTo(CarbonImmutable::create(2026, 10, 14, 10, 45, 12, 'America/Sao_Paulo'));
-        Sanctum::actingAs(User::factory()->create(), ['catalog:sales:create']);
+        $catalogUser = User::factory()->create();
+        Sanctum::actingAs($catalogUser, ['catalog:sales:create']);
         $product = Product::factory()->create(['sale_price' => '25.90']);
 
-        $this->postJson(route('api.catalog.sales.store'), [
-            'external_order_id' => (string) Str::uuid(),
-            'items' => [[
-                'product_id' => $product->id,
-                'quantity' => 2,
-            ]],
-        ])->assertCreated();
+        $this->withHeader('X-Business-ID', (string) $catalogUser->business_id)
+            ->postJson(route('api.catalog.sales.store'), [
+                'external_order_id' => (string) Str::uuid(),
+                'items' => [[
+                    'product_id' => $product->id,
+                    'quantity' => 2,
+                ]],
+            ])->assertCreated();
 
         $sale = Sale::query()->firstOrFail();
 

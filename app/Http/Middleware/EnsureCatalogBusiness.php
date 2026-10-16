@@ -21,8 +21,9 @@ class EnsureCatalogBusiness
         $businessId = $request->header('X-Business-ID');
 
         if (
-            $businessId !== null
-            && (! ctype_digit($businessId) || (int) $businessId !== $this->businessContext->id())
+            $businessId === null
+            || ! ctype_digit($businessId)
+            || (int) $businessId !== $this->businessContext->id()
         ) {
             abort(403, 'A empresa informada não corresponde ao token do Catálogo.');
         }
