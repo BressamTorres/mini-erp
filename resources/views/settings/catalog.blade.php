@@ -55,9 +55,7 @@
 
                 <aside class="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
                     @if ($qrCodeUrl !== null)
-                        <div class="rounded-lg border border-slate-200 bg-white p-3">
-                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-[12.5rem] max-w-full">
-                        </div>
+                        <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-[12.5rem] max-w-full">
                     @else
                         <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                             O serviço de QR Code não está configurado.
