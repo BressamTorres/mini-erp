@@ -1,44 +1,53 @@
 <x-app-layout>
     <x-slot name="title">Meu Catálogo Online | Infinit ERP</x-slot>
 
-    <div class="mx-auto max-w-6xl space-y-6">
-        <header>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Meu Catálogo Online</h1>
-            <p class="mt-1 text-sm text-slate-500">Compartilhe seu catálogo com seus clientes e receba pedidos online.</p>
+    <div class="mx-auto max-w-4xl space-y-6">
+        <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Meu Catálogo Online</h1>
+                <p class="mt-1 text-sm text-slate-500">Compartilhe seu catálogo com seus clientes e receba pedidos online.</p>
+            </div>
         </header>
 
         @if ($catalogUrl !== null)
-            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                <section class="overflow-hidden rounded-xl border border-blue-200 bg-white shadow-sm">
-                    <div class="bg-gradient-to-br from-blue-600 to-blue-700 px-5 py-6 text-white sm:px-7">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-start gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
                             </svg>
                         </div>
-                        <p class="mt-4 text-sm font-medium text-blue-100">Endereço público de {{ $business->trade_name }}</p>
-                        <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-lg font-semibold underline decoration-blue-300 underline-offset-4 hover:decoration-white">
-                            {{ $catalogUrl }}
-                        </a>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Endereço do catálogo</h2>
+                            <p class="mt-1 text-sm text-slate-500">Link público de {{ $business->trade_name }}.</p>
+                        </div>
                     </div>
 
-                    <div class="p-5 sm:p-7">
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <button type="button" @click="copyLink" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <div class="px-5 py-5 sm:px-6 sm:py-6">
+                        <div class="rounded-lg border border-violet-200 bg-violet-50/60 px-4 py-3.5">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">URL pública</p>
+                            <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-sm font-semibold text-violet-700 underline decoration-violet-300 underline-offset-4 transition hover:text-violet-800 hover:decoration-violet-500 sm:text-base">
+                                {{ $catalogUrl }}
+                            </a>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <button type="button" @click="copyLink" class="inline-flex min-h-[2.625rem] items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-200 transition hover:from-violet-700 hover:to-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 8h11v11H8V8Zm-3 8H4V4h12v1" />
                                 </svg>
                                 Copiar link
                             </button>
 
-                            <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[2.625rem] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14 4h6v6m0-6-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6" />
                                 </svg>
                                 Abrir catálogo
                             </a>
 
-                            <a href="{{ $whatsAppUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                            <a href="{{ $whatsAppUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[2.625rem] items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5Z" />
                                 </svg>
@@ -51,13 +60,18 @@
                     </div>
                 </section>
 
-                <aside class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-                    <h2 class="font-semibold text-slate-900">QR Code do catálogo</h2>
+                <aside class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm sm:p-6">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4h5v5H4V4Zm11 0h5v5h-5V4ZM4 15h5v5H4v-5Zm11 0h2v2h-2v-2Zm3 0h2v5h-5v-2m3-3v3m-3-7h5v2h-5v-2Zm-4 0h2v5h-2v-5Z" />
+                        </svg>
+                    </span>
+                    <h2 class="mt-3 font-semibold text-slate-900">QR Code do catálogo</h2>
                     <p class="mt-1 text-sm text-slate-500">Aponte a câmera do celular para acessar.</p>
 
                     @if ($qrCodeUrl !== null)
-                        <div class="mt-5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-full max-w-[16.25rem]">
+                        <div class="mt-5 rounded-lg border border-slate-200 bg-white p-3">
+                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-full max-w-[13rem]">
                         </div>
                     @else
                         <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -67,9 +81,9 @@
                 </aside>
             </div>
         @else
-            <section class="rounded-xl border border-amber-200 bg-white p-6 shadow-sm sm:p-8">
+            <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="flex flex-col items-center text-center">
-                    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-violet-50 text-violet-600">
                         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v4m0 4h.01M10.3 4.3 2.8 17.2A2 2 0 0 0 4.5 20h15a2 2 0 0 0 1.7-2.8L13.7 4.3a2 2 0 0 0-3.4 0Z" />
                         </svg>
