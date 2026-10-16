@@ -43,7 +43,7 @@ class CatalogControllerTest extends TestCase
             ->assertSee($expectedCatalogUrl)
             ->assertSee('Copiar link')
             ->assertSee('Abrir catálogo')
-            ->assertSee('WhatsApp')
+            ->assertDontSee('WhatsApp')
             ->assertDontSee('outra-empresa')
             ->assertDontSee('token-que-nao-pode-aparecer')
             ->assertDontSee('<script>alert("xss")</script>', false)

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Meu Catálogo Online | Infinit ERP</x-slot>
 
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="mx-auto max-w-4xl space-y-5">
         <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">Meu Catálogo Online</h1>
@@ -10,7 +10,7 @@
         </header>
 
         @if ($catalogUrl !== null)
-            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
                 <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="flex items-start gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
                         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
@@ -24,15 +24,15 @@
                         </div>
                     </div>
 
-                    <div class="px-5 py-5 sm:px-6 sm:py-6">
-                        <div class="rounded-lg border border-violet-200 bg-violet-50/60 px-4 py-3.5">
+                    <div class="px-5 py-4 sm:px-6 sm:py-5">
+                        <div class="rounded-lg border border-violet-200 bg-violet-50/60 px-4 py-3">
                             <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">URL pública</p>
                             <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-sm font-semibold text-violet-700 underline decoration-violet-300 underline-offset-4 transition hover:text-violet-800 hover:decoration-violet-500 sm:text-base">
                                 {{ $catalogUrl }}
                             </a>
                         </div>
 
-                        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <button type="button" @click="copyLink" class="inline-flex min-h-[2.625rem] items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-200 transition hover:from-violet-700 hover:to-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 8h11v11H8V8Zm-3 8H4V4h12v1" />
@@ -46,17 +46,10 @@
                                 </svg>
                                 Abrir catálogo
                             </a>
-
-                            <a href="{{ $whatsAppUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[2.625rem] items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5Z" />
-                                </svg>
-                                WhatsApp
-                            </a>
                         </div>
 
-                        <p x-cloak x-show="copied" class="mt-4 text-sm font-medium text-emerald-700" role="status">Link copiado para a área de transferência.</p>
-                        <p x-cloak x-show="copyFailed" class="mt-4 text-sm font-medium text-rose-700" role="alert">Não foi possível copiar automaticamente. Selecione o endereço acima.</p>
+                        <p x-cloak x-show="copied" class="mt-3 text-sm font-medium text-emerald-700" role="status">Link copiado para a área de transferência.</p>
+                        <p x-cloak x-show="copyFailed" class="mt-3 text-sm font-medium text-rose-700" role="alert">Não foi possível copiar automaticamente. Selecione o endereço acima.</p>
                     </div>
                 </section>
 
