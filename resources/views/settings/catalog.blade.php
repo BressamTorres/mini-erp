@@ -11,21 +11,21 @@
 
         @if ($catalogUrl !== null)
             <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-stretch">
-                <section class="flex flex-col justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="flex items-start gap-3 px-5 pb-2 pt-5 sm:px-6 sm:pt-6">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
-                            </svg>
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="p-6 sm:p-7">
+                        <div class="flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Endereço do catálogo</h2>
+                                <p class="mt-1 text-sm text-slate-500">Link público de {{ $business->trade_name }}.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 class="text-lg font-bold text-slate-900">Endereço do catálogo</h2>
-                            <p class="mt-1 text-sm text-slate-500">Link público de {{ $business->trade_name }}.</p>
-                        </div>
-                    </div>
 
-                    <div class="px-5 pb-5 pt-2 sm:px-6 sm:pb-6">
-                        <div class="rounded-lg border border-violet-200 bg-violet-50/60 px-4 py-3">
+                        <div class="mt-5 rounded-lg border border-violet-200 bg-violet-50/60 px-4 py-3">
                             <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">URL pública</p>
                             <a href="{{ $catalogUrl }}" target="_blank" rel="noopener noreferrer" class="mt-1 block break-all text-sm font-semibold text-violet-700 underline decoration-violet-300 underline-offset-4 transition hover:text-violet-800 hover:decoration-violet-500 sm:text-base">
                                 {{ $catalogUrl }}
@@ -53,18 +53,18 @@
                     </div>
                 </section>
 
-                <aside class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm sm:p-6">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <aside class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm sm:p-5">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4h5v5H4V4Zm11 0h5v5h-5V4ZM4 15h5v5H4v-5Zm11 0h2v2h-2v-2Zm3 0h2v5h-5v-2m3-3v3m-3-7h5v2h-5v-2Zm-4 0h2v5h-2v-5Z" />
                         </svg>
                     </span>
-                    <h2 class="mt-3 font-semibold text-slate-900">QR Code do catálogo</h2>
+                    <h2 class="mt-2 font-semibold text-slate-900">QR Code do catálogo</h2>
                     <p class="mt-1 text-sm text-slate-500">Aponte a câmera do celular para acessar.</p>
 
                     @if ($qrCodeUrl !== null)
-                        <div class="mt-5 rounded-lg border border-slate-200 bg-white p-3">
-                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-full max-w-[11rem]">
+                        <div class="mt-3 rounded-lg border border-slate-200 bg-white p-2">
+                            <img src="{{ $qrCodeUrl }}" alt="QR Code para {{ $catalogUrl }}" width="260" height="260" class="h-auto w-[12.5rem] max-w-full">
                         </div>
                     @else
                         <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
