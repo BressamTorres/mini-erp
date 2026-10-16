@@ -11,20 +11,25 @@ class TopbarTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_topbar_displays_active_business_trade_name_and_initial(): void
+    public function test_topbar_displays_active_business_name_initial_and_email(): void
     {
         $business = Business::factory()->create([
             'trade_name' => 'Fetech Soluções Empresariais com Nome Extenso',
             'legal_name' => 'Fetech Soluções Empresariais Ltda.',
+            'email' => 'empresa@fetech.test',
         ]);
-        $user = User::factory()->for($business)->create();
+        $user = User::factory()->for($business)->create([
+            'email' => 'usuario@fetech.test',
+        ]);
 
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk()
             ->assertSee('Fetech Soluções Empresariais com Nome Extenso')
+            ->assertSee('empresa@fetech.test')
             ->assertSee('>F</span>', false)
             ->assertSee('max-w-48 truncate', false)
+            ->assertDontSee('usuario@fetech.test')
             ->assertDontSee('Administrador');
     }
 
@@ -49,9 +54,12 @@ class TopbarTest extends TestCase
     {
         $business = Business::factory()->create([
             'trade_name' => 'Empresa Antiga',
+            'email' => 'antigo@empresa.test',
         ]);
         $originalSlug = $business->catalog_slug;
-        $user = User::factory()->for($business)->create();
+        $user = User::factory()->for($business)->create([
+            'email' => 'usuario@login.test',
+        ]);
 
         $response = $this->actingAs($user)
             ->followingRedirects()
@@ -59,22 +67,34 @@ class TopbarTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Empresa Atualizada')
+            ->assertSee('contato@empresa.test')
             ->assertSee('>E</span>', false)
-            ->assertDontSee('Empresa Antiga');
+            ->assertDontSee('Empresa Antiga')
+            ->assertDontSee('antigo@empresa.test')
+            ->assertDontSee('usuario@login.test');
         $this->assertSame($originalSlug, $business->fresh()->catalog_slug);
+        $this->assertSame('usuario@login.test', $user->fresh()->email);
     }
 
     public function test_topbar_does_not_display_another_business_name(): void
     {
-        $activeBusiness = Business::factory()->create(['trade_name' => 'Empresa Ativa']);
-        Business::factory()->create(['trade_name' => 'Empresa de Outro Tenant']);
+        $activeBusiness = Business::factory()->create([
+            'trade_name' => 'Empresa Ativa',
+            'email' => 'ativa@empresa.test',
+        ]);
+        Business::factory()->create([
+            'trade_name' => 'Empresa de Outro Tenant',
+            'email' => 'outra@empresa.test',
+        ]);
         $user = User::factory()->for($activeBusiness)->create();
 
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk()
             ->assertSee('Empresa Ativa')
-            ->assertDontSee('Empresa de Outro Tenant');
+            ->assertSee('ativa@empresa.test')
+            ->assertDontSee('Empresa de Outro Tenant')
+            ->assertDontSee('outra@empresa.test');
     }
 
     public function test_topbar_escapes_business_name(): void

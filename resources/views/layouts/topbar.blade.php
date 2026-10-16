@@ -37,7 +37,7 @@
         >
             <div class="border-b border-slate-100 px-4 py-3">
                 <p class="truncate text-sm font-semibold text-slate-800" title="{{ $activeBusinessName }}">{{ $activeBusinessName }}</p>
-                <p class="truncate text-xs text-slate-500">{{ auth()->user()->email }}</p>
+                <p class="truncate text-xs text-slate-500">{{ $activeBusiness->email }}</p>
             </div>
 
             <form method="POST" action="{{ route('logout') }}">
