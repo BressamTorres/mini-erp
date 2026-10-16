@@ -10,7 +10,7 @@
         </header>
 
         @if ($catalogUrl !== null)
-            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,27.5rem)] xl:items-stretch">
+            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_440px] xl:items-stretch">
                 <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="p-6 sm:p-7">
                         <div class="flex items-start gap-3">
