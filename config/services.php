@@ -8,6 +8,8 @@ return [
 
     'catalog' => [
         'credentials_key' => env('CATALOG_CREDENTIAL_KEY', env('APP_KEY')),
+        'public_url' => env('CATALOG_PUBLIC_URL'),
+        'qr_code_url' => env('CATALOG_QR_CODE_URL', 'https://quickchart.io/qr'),
     ],
 
     /*

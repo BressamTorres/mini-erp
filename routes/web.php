@@ -7,6 +7,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\Settings\BusinessController as SettingsBusinessController;
+use App\Http\Controllers\Settings\CatalogController as SettingsCatalogController;
 use App\Http\Middleware\SetBusinessContext;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +61,13 @@ Route::middleware(['auth', SetBusinessContext::class])->group(function () {
     Route::patch('/sales/{sale}/deactivate', [SaleController::class, 'deactivate'])
         ->whereNumber('sale')
         ->name('sales.deactivate');
+
+    Route::get('/settings/business', [SettingsBusinessController::class, 'edit'])
+        ->name('settings.business.edit');
+    Route::put('/settings/business', [SettingsBusinessController::class, 'update'])
+        ->name('settings.business.update');
+    Route::get('/settings/catalog', [SettingsCatalogController::class, 'show'])
+        ->name('settings.catalog.show');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

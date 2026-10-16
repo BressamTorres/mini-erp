@@ -166,6 +166,61 @@
             <span class="erp-sidebar-label">Vendas</span>
             <span x-cloak x-show="sidebarCollapsed" aria-hidden="true" class="invisible absolute left-full top-1/2 z-[60] ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg shadow-slate-200/70 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Vendas</span>
         </a>
+
+        <div x-data="{ settingsOpen: @js(request()->routeIs('settings.*')) }" class="space-y-1">
+            <button
+                type="button"
+                @click="if (sidebarCollapsed) { toggleSidebar(); settingsOpen = true } else { settingsOpen = ! settingsOpen }"
+                @class([
+                    'erp-sidebar-item group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition',
+                    'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-sm shadow-violet-200' => request()->routeIs('settings.*'),
+                    'text-slate-600 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('settings.*'),
+                ])
+                aria-label="Configurações"
+                :aria-expanded="settingsOpen"
+                aria-controls="settings-navigation"
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" />
+                </svg>
+                <span class="erp-sidebar-label flex-1">Configurações</span>
+                <svg x-show="! sidebarCollapsed" class="erp-sidebar-label h-4 w-4 shrink-0 transition-transform" :class="settingsOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
+                </svg>
+                <span x-cloak x-show="sidebarCollapsed" aria-hidden="true" class="invisible absolute left-full top-1/2 z-[60] ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 opacity-0 shadow-lg shadow-slate-200/70 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Configurações</span>
+            </button>
+
+            <div
+                id="settings-navigation"
+                x-cloak
+                x-show="settingsOpen && ! sidebarCollapsed"
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="-translate-y-1 opacity-0"
+                x-transition:enter-end="translate-y-0 opacity-100"
+                class="space-y-1 pl-11 pr-2"
+            >
+                <a
+                    href="{{ route('settings.business.edit') }}"
+                    @class([
+                        'block rounded-lg px-3 py-2 text-sm transition',
+                        'bg-violet-50 font-semibold text-violet-700' => request()->routeIs('settings.business.*'),
+                        'text-slate-500 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('settings.business.*'),
+                    ])
+                    @if (request()->routeIs('settings.business.*')) aria-current="page" @endif
+                    @click="sidebarOpen = false"
+                >Dados da Empresa</a>
+                <a
+                    href="{{ route('settings.catalog.show') }}"
+                    @class([
+                        'block rounded-lg px-3 py-2 text-sm transition',
+                        'bg-violet-50 font-semibold text-violet-700' => request()->routeIs('settings.catalog.*'),
+                        'text-slate-500 hover:bg-slate-50 hover:text-violet-700' => ! request()->routeIs('settings.catalog.*'),
+                    ])
+                    @if (request()->routeIs('settings.catalog.*')) aria-current="page" @endif
+                    @click="sidebarOpen = false"
+                >Meu Catálogo Online</a>
+            </div>
+        </div>
     </nav>
 
 </aside>
