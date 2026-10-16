@@ -11,5 +11,6 @@ Route::post('/catalog/sales', [CatalogSaleController::class, 'store'])
         SetBusinessContext::class,
         EnsureCatalogBusiness::class,
         'abilities:catalog:sales:create',
+        'throttle:catalog-api',
     ])
     ->name('api.catalog.sales.store');

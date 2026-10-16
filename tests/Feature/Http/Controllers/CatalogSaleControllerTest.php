@@ -49,6 +49,21 @@ class CatalogSaleControllerTest extends TestCase
             ->assertJsonPath('message', 'A empresa informada não corresponde ao token do Catálogo.');
     }
 
+    public function test_returns_429_when_catalog_rate_limit_is_exceeded(): void
+    {
+        config()->set('services.catalog_api.rate_limit_per_minute', 1);
+        $this->authenticateCatalog();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->postJson(route('api.catalog.sales.store'), [])
+            ->assertUnprocessable();
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->postJson(route('api.catalog.sales.store'), [])
+            ->assertTooManyRequests();
+
+        $this->assertDatabaseEmpty('sales');
+    }
+
     public function test_returns_422_when_required_fields_are_missing(): void
     {
         $this->authenticateCatalog();

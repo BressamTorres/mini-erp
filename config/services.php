@@ -2,6 +2,10 @@
 
 return [
 
+    'catalog_api' => [
+        'rate_limit_per_minute' => (int) env('CATALOG_API_RATE_LIMIT_PER_MINUTE', 60),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

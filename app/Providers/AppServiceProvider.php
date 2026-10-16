@@ -32,5 +32,12 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(20)->by($request->ip()),
             ];
         });
+
+        RateLimiter::for('catalog-api', function (Request $request): Limit {
+            $identifier = $request->user()?->getAuthIdentifier() ?? 'guest';
+
+            return Limit::perMinute((int) config('services.catalog_api.rate_limit_per_minute', 60))
+                ->by($identifier.'|'.$request->ip());
+        });
     }
 }

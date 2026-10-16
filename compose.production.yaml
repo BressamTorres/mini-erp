@@ -1,0 +1,138 @@
+name: mini-erp-production
+
+x-app: &app
+  image: ${ERP_IMAGE:-mini-erp:production}
+  build:
+    context: .
+    dockerfile: docker/production/Dockerfile
+    target: app
+  env_file:
+    - ${ERP_ENV_FILE:-.env.production}
+  restart: unless-stopped
+  volumes:
+    - erp_public_uploads:/var/www/html/storage/app/public
+    - erp_private_uploads:/var/www/html/storage/app/private
+  networks:
+    - web
+    - data
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app
+    expose:
+      - "9000"
+
+  queue:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=90", "--no-interaction"]
+    healthcheck:
+      test: ["CMD", "php", "-r", "$$command = file_get_contents('/proc/1/cmdline'); exit(str_contains($$command, 'queue:work') ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    healthcheck:
+      test: ["CMD", "php", "-r", "$$command = file_get_contents('/proc/1/cmdline'); exit(str_contains($$command, 'schedule:work') ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  nginx:
+    image: ${ERP_NGINX_IMAGE:-mini-erp-nginx:production}
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile
+      target: nginx
+    environment:
+      NGINX_HOST: ${ERP_DOMAIN:-_}
+    restart: unless-stopped
+    ports:
+      - "${ERP_HTTP_BIND:-127.0.0.1:8081}:80"
+    volumes:
+      - erp_public_uploads:/var/www/html/storage/app/public:ro
+    networks:
+      web:
+      data:
+        aliases:
+          - mini-erp-api
+    depends_on:
+      app:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    env_file:
+      - ${ERP_DATABASE_ENV_FILE:-.env.database.production}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    env_file:
+      - ${ERP_REDIS_ENV_FILE:-.env.redis.production}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backup:
+    image: ${ERP_BACKUP_IMAGE:-mini-erp-backup:production}
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile
+      target: backup
+    profiles:
+      - maintenance
+    env_file:
+      - ${ERP_DATABASE_ENV_FILE:-.env.database.production}
+    volumes:
+      - database_backups:/backups
+    networks:
+      - data
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  web:
+    driver: bridge
+  data:
+    name: mini-erp-data
+    driver: bridge
+    internal: true
+
+volumes:
+  mysql_data:
+  redis_data:
+  erp_public_uploads:
+  erp_private_uploads:
+  database_backups:
