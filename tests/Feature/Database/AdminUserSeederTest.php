@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\Person;
 use App\Models\User;
 use App\Services\BusinessContext;
 use Database\Seeders\AdminUserSeeder;
@@ -34,7 +35,24 @@ class AdminUserSeederTest extends TestCase
         $this->assertTrue(Hash::check('development-password', $administrator->password));
         app(BusinessContext::class)->run(
             $administrator->business_id,
-            fn () => $this->assertTrue($administrator->hasRole('administrador')),
+            function () use ($administrator): void {
+                $this->assertTrue($administrator->hasRole('administrador'));
+                $this->assertDatabaseCount('persons', 2);
+                $this->assertDatabaseHas('persons', [
+                    'business_id' => $administrator->business_id,
+                    'system_key' => Person::SYSTEM_DEFAULT_CUSTOMER,
+                    'type' => Person::TYPE_CUSTOMER,
+                    'name' => 'Consumidor Final',
+                    'active' => true,
+                ]);
+                $this->assertDatabaseHas('persons', [
+                    'business_id' => $administrator->business_id,
+                    'system_key' => Person::SYSTEM_DEFAULT_SELLER,
+                    'type' => Person::TYPE_SELLER,
+                    'name' => 'Vendedor Padrão',
+                    'active' => true,
+                ]);
+            },
         );
     }
 }

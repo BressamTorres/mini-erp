@@ -10,6 +10,8 @@ use Spatie\Permission\Models\Role;
 
 class BusinessRegistrationService
 {
+    public function __construct(private DefaultPersonService $defaultPeople) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -33,6 +35,7 @@ class BusinessRegistrationService
 
                 $administrator = Role::findOrCreate('administrador', 'web');
                 $user->assignRole($administrator);
+                $this->defaultPeople->ensureDefaults();
 
                 return $user;
             });

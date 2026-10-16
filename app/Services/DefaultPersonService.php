@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\DB;
 
 class DefaultPersonService
 {
+    public function ensureDefaults(): void
+    {
+        $this->customer();
+        $this->seller();
+    }
+
     public function customer(): Person
     {
         return $this->findOrCreate(
@@ -21,7 +27,7 @@ class DefaultPersonService
         return $this->findOrCreate(
             Person::SYSTEM_DEFAULT_SELLER,
             Person::TYPE_SELLER,
-            'Vendas Online'
+            'Vendedor Padrão'
         );
     }
 

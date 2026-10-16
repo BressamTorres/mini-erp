@@ -4,11 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Services\BusinessContext;
+use App\Services\DefaultPersonService;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
 class AdminUserSeeder extends Seeder
 {
+    public function __construct(private DefaultPersonService $defaultPeople) {}
+
     /**
      * Run the database seeds.
      */
@@ -50,6 +53,8 @@ class AdminUserSeeder extends Seeder
             $administrator->syncRoles([
                 Role::findOrCreate('administrador', 'web'),
             ]);
+
+            $this->defaultPeople->ensureDefaults();
         });
     }
 }

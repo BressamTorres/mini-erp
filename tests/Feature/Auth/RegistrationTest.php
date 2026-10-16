@@ -3,8 +3,12 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\Business;
+use App\Models\Person;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\BusinessContext;
+use App\Services\DefaultPersonService;
+use App\Services\SaleService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -50,6 +54,66 @@ class RegistrationTest extends TestCase
         });
         Event::assertDispatched(Registered::class, fn (Registered $event): bool => $event->user->is($user));
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_registration_creates_isolated_idempotent_default_people_available_to_sales(): void
+    {
+        $this->post('/register', $this->validRegistration([
+            'email' => 'first@example.com',
+            'business_trade_name' => 'Empresa Alfa',
+            'business_legal_name' => 'Empresa Alfa Ltda.',
+            'business_document' => '52998224725',
+            'business_email' => 'alfa@example.com',
+        ]))->assertRedirect(route('dashboard', absolute: false));
+        $firstUser = User::query()->where('email', 'first@example.com')->sole();
+
+        $this->post('/logout')->assertRedirect(route('login'));
+        $this->post('/register', $this->validRegistration([
+            'email' => 'second@example.com',
+            'business_trade_name' => 'Empresa Beta',
+            'business_legal_name' => 'Empresa Beta Ltda.',
+            'business_document' => '11222333000181',
+            'business_email' => 'beta@example.com',
+        ]))->assertRedirect(route('dashboard', absolute: false));
+        $secondUser = User::query()->where('email', 'second@example.com')->sole();
+
+        $this->assertNotSame($firstUser->business_id, $secondUser->business_id);
+
+        foreach ([$firstUser, $secondUser] as $user) {
+            app(BusinessContext::class)->run($user->business_id, function () use ($user): void {
+                $customer = Person::query()->where('system_key', Person::SYSTEM_DEFAULT_CUSTOMER)->sole();
+                $seller = Person::query()->where('system_key', Person::SYSTEM_DEFAULT_SELLER)->sole();
+
+                $this->assertSame($user->business_id, $customer->business_id);
+                $this->assertSame('Consumidor Final', $customer->name);
+                $this->assertSame(Person::TYPE_CUSTOMER, $customer->type);
+                $this->assertTrue($customer->active);
+                $this->assertSame($user->business_id, $seller->business_id);
+                $this->assertSame('Vendedor Padrão', $seller->name);
+                $this->assertSame(Person::TYPE_SELLER, $seller->type);
+                $this->assertTrue($seller->active);
+                $this->assertSame(2, Person::query()->count());
+
+                app(DefaultPersonService::class)->ensureDefaults();
+                app(DefaultPersonService::class)->ensureDefaults();
+
+                $this->assertSame(2, Person::query()->count());
+                $options = app(SaleService::class)->formOptions();
+                $this->assertSame([$customer->id], collect($options['customers'])->pluck('id')->all());
+                $this->assertSame([$seller->id], collect($options['sellers'])->pluck('id')->all());
+
+                $product = Product::factory()->create(['sale_price' => '10.00']);
+                $sale = app(SaleService::class)->create([
+                    'customer_id' => $customer->id,
+                    'seller_id' => $seller->id,
+                    'items' => [['product_id' => $product->id, 'quantity' => 1]],
+                ]);
+
+                $this->assertSame($user->business_id, $sale->business_id);
+                $this->assertSame($customer->id, $sale->customer_id);
+                $this->assertSame($seller->id, $sale->seller_id);
+            });
+        }
     }
 
     public function test_registered_user_can_log_out_and_log_in(): void

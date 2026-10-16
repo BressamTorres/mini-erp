@@ -182,7 +182,7 @@ class CatalogSaleControllerTest extends TestCase
             'created' => true,
         ]);
         $this->assertSame('Consumidor Final', $customer->name);
-        $this->assertSame('Vendas Online', $seller->name);
+        $this->assertSame('Vendedor Padrão', $seller->name);
         $this->assertDatabaseHas('sales', [
             'id' => $sale->id,
             'external_order_id' => $externalOrderId,
