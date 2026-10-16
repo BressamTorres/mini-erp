@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Meu Catálogo Online | Infinit ERP</x-slot>
 
-    <div class="mx-auto max-w-4xl space-y-5">
+    <div class="mx-auto max-w-[61.625rem] space-y-5">
         <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">Meu Catálogo Online</h1>
@@ -10,7 +10,7 @@
         </header>
 
         @if ($catalogUrl !== null)
-            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[3fr_2fr] lg:items-stretch">
+            <div x-data="catalogSharing(@js($catalogUrl))" class="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,27.5rem)] xl:items-stretch">
                 <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="p-6 sm:p-7">
                         <div class="flex items-start gap-3">
