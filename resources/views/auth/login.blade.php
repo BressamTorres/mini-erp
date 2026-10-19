@@ -58,7 +58,7 @@
             </button>
 
             <p class="mt-5 text-center text-sm text-slate-600">
-                Ainda não tem conta?
+                Ainda não possui conta?
                 <a href="{{ route('register') }}"
                     class="font-semibold text-violet-700 hover:text-violet-800 focus:outline-none focus:underline">
                     Criar conta
