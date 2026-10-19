@@ -1,16 +1,15 @@
 <x-guest-layout :content-only="true">
-    <div class="mx-auto max-w-lg">
+    <div class="mx-auto max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <div class="mb-7 text-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700">Infinit ERP</p>
-            <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Entrar</h1>
-            <p class="mt-2 text-sm text-slate-600">Acesse sua conta.</p>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                <span class="text-violet-600">Infinit</span> ERP
+            </h1>
+            <p class="mt-2 text-sm text-slate-600">Acesse sua conta</p>
         </div>
 
         <x-auth-session-status class="mb-5" :status="session('status')" />
 
-        <form method="POST" action="{{ route('login') }}"
-            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
-            x-data="{ showPassword: false, submitting: false }"
+        <form method="POST" action="{{ route('login') }}" x-data="{ showPassword: false, submitting: false }"
             x-on:submit="if (submitting) { $event.preventDefault(); } else { submitting = true; }">
             @csrf
 
