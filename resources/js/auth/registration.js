@@ -1,5 +1,5 @@
-import { documentValidationMessage, formatDocument } from '../components/person-document';
-import { formatPhone } from '../components/phone';
+import { documentValidationMessage, formatDocument } from '../components/person-document.js';
+import { formatPhone } from '../components/phone.js';
 
 export default function registerRegistrationForm(Alpine) {
     Alpine.data('registrationForm', (config) => ({
@@ -9,6 +9,7 @@ export default function registerRegistrationForm(Alpine) {
         businessDocument: formatDocument(config.businessDocument),
         businessPhone: formatPhone(config.businessPhone),
         documentError: '',
+        submitting: false,
 
         maskDocument(event) {
             const value = formatDocument(event.target.value);
@@ -32,12 +33,20 @@ export default function registerRegistrationForm(Alpine) {
         },
 
         submitForm(event) {
-            if (this.validateDocument()) {
+            if (this.submitting) {
+                event.preventDefault();
+
                 return;
             }
 
-            event.preventDefault();
-            this.$nextTick(() => this.$refs.businessDocument?.focus());
+            if (!this.validateDocument()) {
+                event.preventDefault();
+                this.$nextTick(() => this.$refs.businessDocument?.focus());
+
+                return;
+            }
+
+            this.submitting = true;
         },
     }));
 }
