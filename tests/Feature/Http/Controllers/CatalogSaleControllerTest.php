@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Models\Business;
 use App\Models\Person;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\BusinessContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -221,6 +223,249 @@ class CatalogSaleControllerTest extends TestCase
         $this->assertDatabaseMissing('persons', ['system_key' => Person::SYSTEM_DEFAULT_SELLER]);
     }
 
+    public function test_reuses_existing_customer_by_formatted_cpf_without_overwriting_data(): void
+    {
+        $this->authenticateCatalog();
+        $customer = Person::factory()->customer()->create([
+            'name' => 'Nome mantido no ERP',
+            'document' => '52998224725',
+            'phone' => '11911111111',
+            'email' => 'erp@example.com',
+        ]);
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData([
+                'name' => 'Nome vindo do catálogo',
+                'document' => '529.982.247-25',
+                'phone' => '(11) 99999-9999',
+                'email' => 'catalogo@example.com',
+            ]),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertCreated();
+
+        $sale = Sale::query()->firstOrFail();
+        $seller = Person::query()->where('system_key', Person::SYSTEM_DEFAULT_SELLER)->firstOrFail();
+        $this->assertSame($customer->id, $sale->customer_id);
+        $this->assertSame($seller->id, $sale->seller_id);
+        $this->assertSame('Nome mantido no ERP', $customer->fresh()->name);
+        $this->assertSame('erp@example.com', $customer->fresh()->email);
+        $this->assertDatabaseCount('sales', 1);
+    }
+
+    public function test_reuses_legacy_customer_with_formatted_document_from_unformatted_cpf(): void
+    {
+        $this->authenticateCatalog();
+        $customer = Person::factory()->customer()->create(['document' => '529.982.247-25']);
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertCreated();
+
+        $this->assertSame($customer->id, Sale::query()->firstOrFail()->customer_id);
+    }
+
+    public function test_creates_customer_from_catalog_data_when_cpf_does_not_exist(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData([
+                'document' => '529.982.247-25',
+                'phone' => '(11) 99999-9999',
+            ]),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertCreated();
+
+        $customer = Person::query()
+            ->where('type', Person::TYPE_CUSTOMER)
+            ->where('document', '52998224725')
+            ->firstOrFail();
+        $sale = Sale::query()->firstOrFail();
+        $this->assertSame($customer->id, $sale->customer_id);
+        $this->assertSame('11999999999', $customer->phone);
+        $this->assertTrue($customer->active);
+    }
+
+    public function test_returns_422_when_cpf_matches_multiple_customers(): void
+    {
+        $this->authenticateCatalog();
+        Person::factory()->customer()->create(['document' => '52998224725']);
+        Person::factory()->customer()->create(['document' => '529.982.247-25']);
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertUnprocessable()
+            ->assertJsonFragment([
+                'customer.document' => [
+                    'Existe mais de um cliente com este CPF. Corrija a duplicidade no Mini ERP antes de continuar.',
+                ],
+            ]);
+
+        $this->assertDatabaseEmpty('sales');
+        $this->assertDatabaseCount('persons', 2);
+    }
+
+    public function test_same_cpf_in_another_business_does_not_cross_business_boundary(): void
+    {
+        $currentBusinessId = app(BusinessContext::class)->id();
+        $this->authenticateCatalog();
+        $otherBusiness = Business::factory()->create();
+        $otherCustomer = app(BusinessContext::class)->run(
+            $otherBusiness,
+            fn (): Person => Person::factory()->customer()->create(['document' => '52998224725']),
+        );
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertCreated();
+
+        $sale = Sale::query()->firstOrFail();
+        $this->assertNotSame($otherCustomer->id, $sale->customer_id);
+        $this->assertDatabaseHas('persons', [
+            'id' => $sale->customer_id,
+            'business_id' => $currentBusinessId,
+            'document' => '52998224725',
+        ]);
+        $this->assertSame(2, Person::withoutGlobalScopes()->where('document', '52998224725')->count());
+    }
+
+    public function test_returns_422_for_invalid_customer_cpf(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData(['document' => '111.111.111-11']),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertUnprocessable()
+            ->assertJsonFragment([
+                'customer.document' => ['CPF inválido. Verifique o número informado.'],
+            ]);
+
+        $this->assertDatabaseEmpty('sales');
+    }
+
+    public function test_returns_422_when_customer_cpf_is_missing(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+        $customer = $this->customerData();
+        unset($customer['document']);
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $customer,
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertUnprocessable()
+            ->assertJsonFragment([
+                'customer.document' => ['O CPF do cliente é obrigatório.'],
+            ]);
+
+        $this->assertDatabaseEmpty('sales');
+    }
+
+    public function test_returns_422_when_customer_id_and_customer_data_are_sent_together(): void
+    {
+        $this->authenticateCatalog();
+        $customer = Person::factory()->customer()->create();
+        $product = Product::factory()->create();
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            'external_order_id' => (string) Str::uuid(),
+            'customer_id' => $customer->id,
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['customer_id', 'customer']);
+
+        $this->assertDatabaseEmpty('sales');
+    }
+
+    public function test_reuses_customer_and_sale_when_customer_payload_is_retried(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+        $payload = [
+            'external_order_id' => (string) Str::uuid(),
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ];
+
+        $createdResponse = $this->postJson(route('api.catalog.sales.store'), $payload)->assertCreated();
+        $existingResponse = $this->postJson(route('api.catalog.sales.store'), $payload)->assertOk();
+
+        $this->assertSame($createdResponse->json('id'), $existingResponse->json('id'));
+        $this->assertFalse($existingResponse->json('created'));
+        $this->assertSame(1, Person::query()
+            ->where('type', Person::TYPE_CUSTOMER)
+            ->where('document', '52998224725')
+            ->count());
+        $this->assertDatabaseCount('sales', 1);
+    }
+
+    public function test_conflicting_retry_does_not_leave_a_second_customer(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+        $externalOrderId = (string) Str::uuid();
+        $payload = [
+            'external_order_id' => $externalOrderId,
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ];
+
+        $this->postJson(route('api.catalog.sales.store'), $payload)->assertCreated();
+        $this->postJson(route('api.catalog.sales.store'), [
+            ...$payload,
+            'customer' => $this->customerData([
+                'document' => '11144477735',
+                'email' => 'outro@example.com',
+            ]),
+        ])->assertConflict();
+
+        $this->assertDatabaseMissing('persons', ['document' => '11144477735']);
+        $this->assertDatabaseCount('sales', 1);
+    }
+
+    public function test_reuses_customer_for_distinct_orders_with_the_same_cpf(): void
+    {
+        $this->authenticateCatalog();
+        $product = Product::factory()->create();
+        $payload = [
+            'customer' => $this->customerData(),
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ];
+
+        $this->postJson(route('api.catalog.sales.store'), [
+            ...$payload,
+            'external_order_id' => (string) Str::uuid(),
+        ])->assertCreated();
+        $this->postJson(route('api.catalog.sales.store'), [
+            ...$payload,
+            'external_order_id' => (string) Str::uuid(),
+        ])->assertCreated();
+
+        $this->assertSame(1, Person::query()
+            ->where('type', Person::TYPE_CUSTOMER)
+            ->where('document', '52998224725')
+            ->count());
+        $this->assertDatabaseCount('sales', 2);
+    }
+
     public function test_selected_people_items_and_totals_are_persisted_with_integrity(): void
     {
         $this->authenticateCatalog();
@@ -372,5 +617,19 @@ class CatalogSaleControllerTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['catalog:sales:create']);
         $this->withHeader('X-Business-ID', (string) $user->business_id);
+    }
+
+    /**
+     * @param  array<string, string>  $overrides
+     * @return array{name: string, document: string, phone: string, email: string}
+     */
+    private function customerData(array $overrides = []): array
+    {
+        return array_replace([
+            'name' => 'Cliente do Catálogo',
+            'document' => '52998224725',
+            'phone' => '11999999999',
+            'email' => 'cliente@example.com',
+        ], $overrides);
     }
 }

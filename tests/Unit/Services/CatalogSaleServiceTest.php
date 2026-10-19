@@ -6,6 +6,7 @@ use App\Exceptions\ExternalOrderConflictException;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Repositories\SaleRepository;
+use App\Services\CatalogCustomerService;
 use App\Services\CatalogSaleService;
 use App\Services\DefaultPersonService;
 use App\Services\SaleService;
@@ -55,6 +56,7 @@ class CatalogSaleServiceTest extends TestCase
             $saleService,
             $repository,
             Mockery::mock(DefaultPersonService::class),
+            Mockery::mock(CatalogCustomerService::class),
         );
 
         $result = $service->create($data);
@@ -100,6 +102,7 @@ class CatalogSaleServiceTest extends TestCase
             $saleService,
             $repository,
             Mockery::mock(DefaultPersonService::class),
+            Mockery::mock(CatalogCustomerService::class),
         );
 
         $this->expectException(ExternalOrderConflictException::class);

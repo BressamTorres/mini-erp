@@ -14,12 +14,14 @@ class CatalogSaleService
         private SaleService $sales,
         private SaleRepository $saleRepository,
         private DefaultPersonService $defaultPeople,
+        private CatalogCustomerService $catalogCustomers,
     ) {}
 
     /**
      * @param  array{
      *     external_order_id: string,
      *     customer_id: int|null,
+     *     customer: array{name: string, document: string, phone: string, email: string}|null,
      *     seller_id: int|null,
      *     items: array<int, array{product_id: int, quantity: int}>
      * }  $data
@@ -27,10 +29,11 @@ class CatalogSaleService
      */
     public function create(array $data): array
     {
-        $resolvedData = $this->resolvePeople($data);
+        $resolvedData = null;
 
         try {
-            return DB::transaction(function () use ($resolvedData): array {
+            return DB::transaction(function () use ($data, &$resolvedData): array {
+                $resolvedData = $this->resolvePeople($data);
                 $existingSale = $this->saleRepository->findByExternalOrderId($resolvedData['external_order_id']);
 
                 if ($existingSale !== null) {
@@ -43,6 +46,10 @@ class CatalogSaleService
                 ];
             }, attempts: 3);
         } catch (UniqueConstraintViolationException $exception) {
+            if ($resolvedData === null) {
+                throw $exception;
+            }
+
             $existingSale = $this->saleRepository->findByExternalOrderId($resolvedData['external_order_id']);
 
             if ($existingSale === null) {
@@ -59,6 +66,12 @@ class CatalogSaleService
      */
     private function resolvePeople(array $data): array
     {
+        if (isset($data['customer'])) {
+            $data['customer_id'] = $this->catalogCustomers->resolve($data['customer'])->id;
+        }
+
+        unset($data['customer']);
+
         $data['customer_id'] = $data['customer_id'] ?? $this->defaultPeople->customer()->id;
         $data['seller_id'] = $data['seller_id'] ?? $this->defaultPeople->seller()->id;
 
