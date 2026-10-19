@@ -10,7 +10,10 @@ class GuestLayout extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct(public string $title = 'Entrar') {}
+    public function __construct(
+        public string $title = 'Entrar',
+        public bool $contentOnly = false,
+    ) {}
 
     /**
      * Get the view / contents that represents the component.

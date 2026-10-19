@@ -23,7 +23,10 @@
             <div class="absolute -left-24 top-10 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl"></div>
             <div class="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl"></div>
 
-            <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-6 py-9 shadow-xl shadow-slate-200/70 sm:px-10 sm:py-11">
+            <div @class([
+                'relative w-full',
+                'max-w-md overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-6 py-9 shadow-xl shadow-slate-200/70 sm:px-10 sm:py-11' => ! $contentOnly,
+            ])>
                 {{ $slot }}
             </div>
         </main>
