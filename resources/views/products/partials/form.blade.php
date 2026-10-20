@@ -9,16 +9,15 @@
     <div class="grid gap-6 px-5 py-6 sm:px-6 md:grid-cols-[minmax(0,1fr)_13rem]">
         <div class="grid content-start gap-5">
             <div>
-                <label for="product-sku" class="mb-2 block text-sm font-medium text-slate-700">Código (SKU) <span class="text-rose-500">*</span></label>
-                <input id="product-sku" name="sku" type="text" required maxlength="100" x-ref="productSku" x-model="fields.sku"
-                    @class(['block w-full rounded-lg px-3.5 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:ring-violet-500', 'border-rose-300 focus:border-rose-400' => $errors->has('sku'), 'border-slate-300 focus:border-violet-500' => ! $errors->has('sku')])
-                    placeholder="Ex.: CAM001">
-                @error('sku')<p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror
+                <label for="product-sku" class="mb-2 block text-sm font-medium text-slate-700">Código (SKU)</label>
+                <input id="product-sku" type="text" disabled readonly x-model="fields.sku"
+                    class="block w-full cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 shadow-sm placeholder:text-slate-400"
+                    x-bind:placeholder="mode === 'edit' ? '' : 'Gerado automaticamente após salvar'">
             </div>
 
             <div>
                 <label for="product-name" class="mb-2 block text-sm font-medium text-slate-700">Nome <span class="text-rose-500">*</span></label>
-                <input id="product-name" name="name" type="text" required maxlength="255" x-model="fields.name"
+                <input id="product-name" name="name" type="text" required maxlength="255" x-ref="productName" x-model="fields.name"
                     @class(['block w-full rounded-lg px-3.5 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:ring-violet-500', 'border-rose-300 focus:border-rose-400' => $errors->has('name'), 'border-slate-300 focus:border-violet-500' => ! $errors->has('name')])
                     placeholder="Nome do produto">
                 @error('name')<p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror

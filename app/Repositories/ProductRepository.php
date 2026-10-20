@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class ProductRepository
 {
@@ -32,7 +33,7 @@ class ProductRepository
      */
     public function create(array $data): Product
     {
-        return Product::query()->create($data);
+        return DB::transaction(fn (): Product => Product::query()->create($data));
     }
 
     public function findOrFail(int $id): Product

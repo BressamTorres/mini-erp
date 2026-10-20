@@ -26,7 +26,7 @@ class MultiBusinessWorkflowTest extends TestCase
             ->assertRedirectToRoute('customers.index');
         $this->actingAs($firstUser)->post(route('sellers.store'), $this->personPayload('Vendedor Alfa'))
             ->assertRedirectToRoute('sellers.index');
-        $this->actingAs($firstUser)->post(route('products.store'), $this->productPayload('ALFA-1', 'Produto Alfa', '10,25'))
+        $this->actingAs($firstUser)->post(route('products.store'), $this->productPayload('Produto Alfa', '10,25'))
             ->assertRedirectToRoute('products.index');
 
         $firstCustomer = Person::query()->where('type', Person::TYPE_CUSTOMER)->sole();
@@ -45,7 +45,7 @@ class MultiBusinessWorkflowTest extends TestCase
             ->assertRedirectToRoute('customers.index');
         $this->actingAs($secondUser)->post(route('sellers.store'), $this->personPayload('Vendedor Beta'))
             ->assertRedirectToRoute('sellers.index');
-        $this->actingAs($secondUser)->post(route('products.store'), $this->productPayload('BETA-1', 'Produto Beta', '7,00'))
+        $this->actingAs($secondUser)->post(route('products.store'), $this->productPayload('Produto Beta', '7,00'))
             ->assertRedirectToRoute('products.index');
 
         [$secondCustomer, $secondSeller, $secondProduct] = app(BusinessContext::class)->run(
@@ -56,6 +56,10 @@ class MultiBusinessWorkflowTest extends TestCase
                 Product::query()->sole(),
             ],
         );
+
+        $this->assertSame(Product::skuFromId($firstProduct->id), $firstProduct->sku);
+        $this->assertSame(Product::skuFromId($secondProduct->id), $secondProduct->sku);
+        $this->assertNotSame($firstProduct->sku, $secondProduct->sku);
 
         $this->actingAs($secondUser)->post(route('sales.store'), [
             'customer_id' => $secondCustomer->id,
@@ -150,7 +154,7 @@ class MultiBusinessWorkflowTest extends TestCase
         $this->actingAs($firstUser)->patch(route('sellers.deactivate', $secondSeller))->assertNotFound();
         $this->actingAs($firstUser)->put(
             route('products.update', $secondProduct),
-            $this->productPayload('INV-1', 'Invadido', '1,00', true),
+            $this->productPayload('Invadido', '1,00', true),
         )->assertNotFound();
         $this->actingAs($firstUser)->patch(route('products.deactivate', $secondProduct))->assertNotFound();
         $this->actingAs($firstUser)->getJson(route('sales.show', $secondSale))->assertNotFound();
@@ -244,10 +248,9 @@ class MultiBusinessWorkflowTest extends TestCase
     }
 
     /** @return array<string, string> */
-    private function productPayload(string $sku, string $name, string $salePrice, bool $includeActive = false): array
+    private function productPayload(string $name, string $salePrice, bool $includeActive = false): array
     {
         return array_filter([
-            'sku' => $sku,
             'name' => $name,
             'sale_price' => $salePrice,
             'active' => $includeActive ? '1' : null,

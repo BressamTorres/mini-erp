@@ -4,12 +4,15 @@ namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\User;
+use App\Services\BusinessContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -56,6 +59,9 @@ class ProductControllerTest extends TestCase
             ->assertSee('colspan="5"', false)
             ->assertSee('role="combobox"', false)
             ->assertSee('name="active"', false)
+            ->assertSee('Gerado automaticamente após salvar')
+            ->assertSee('id="product-sku" type="text" disabled readonly', false)
+            ->assertDontSee('name="sku"', false)
             ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertDontSee('<select id="product-active"', false)
             ->assertSee('enctype="multipart/form-data"', false);
@@ -64,7 +70,6 @@ class ProductControllerTest extends TestCase
     public function test_authenticated_user_can_create_product_without_photo(): void
     {
         $response = $this->actingAs(User::factory()->create())->post(route('products.store'), [
-            'sku' => '000123',
             'name' => 'Camiseta Básica',
             'sale_price' => 'R$ 1.234,56',
             'active' => '1',
@@ -74,7 +79,7 @@ class ProductControllerTest extends TestCase
             ->assertSessionHas('success', 'Produto cadastrado com sucesso.')
             ->assertRedirect(route('products.index'));
         $product = Product::query()->firstOrFail();
-        $this->assertSame('000123', $product->sku);
+        $this->assertSame(Product::skuFromId($product->id), $product->sku);
         $this->assertSame('1234.56', $product->sale_price);
         $this->assertTrue($product->active);
         $this->assertNull($product->photo_path);
@@ -83,12 +88,12 @@ class ProductControllerTest extends TestCase
     public function test_new_product_uses_active_database_default(): void
     {
         $product = Product::query()->create([
-            'sku' => 'DEFAULT001',
             'name' => 'Produto padrão',
             'sale_price' => '10.00',
         ]);
 
         $this->assertTrue($product->refresh()->active);
+        $this->assertSame(Product::skuFromId($product->id), $product->sku);
     }
 
     public function test_authenticated_user_can_create_active_product(): void
@@ -132,31 +137,52 @@ class ProductControllerTest extends TestCase
         $this->assertTrue(Product::query()->firstOrFail()->active);
     }
 
-    public function test_sku_is_required(): void
+    public function test_sku_is_generated_from_database_id_with_at_least_six_digits(): void
+    {
+        DB::table('products')->insert([
+            'id' => 124,
+            'business_id' => app(BusinessContext::class)->id(),
+            'sku' => 'SKU-LEGADO',
+            'name' => 'Produto legado',
+            'sale_price' => '10.00',
+            'active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('products.store'), $this->validPayload())
+            ->assertSessionHasNoErrors();
+
+        $product = Product::query()->where('name', 'Produto Teste')->sole();
+        $this->assertSame(125, $product->id);
+        $this->assertSame('000125', $product->sku);
+        $this->assertSame('1000000', Product::skuFromId(1_000_000));
+    }
+
+    public function test_product_creation_rejects_manually_supplied_sku(): void
     {
         $payload = $this->validPayload();
-        unset($payload['sku']);
+        $payload['sku'] = 'MANUAL001';
 
         $response = $this->actingAs(User::factory()->create())
             ->from(route('products.index'))
             ->post(route('products.store'), $payload);
 
-        $response->assertSessionHasErrors(['sku' => 'O código é obrigatório.']);
+        $response->assertSessionHasErrors(['sku' => 'O SKU é gerado automaticamente e não pode ser informado.']);
         $this->assertDatabaseEmpty('products');
     }
 
-    public function test_sku_must_be_unique(): void
+    public function test_eloquent_creation_ignores_manually_supplied_sku(): void
     {
-        Product::factory()->create(['sku' => 'CAM001']);
-        $payload = $this->validPayload();
-        $payload['sku'] = 'CAM001';
+        $product = Product::query()->create([
+            'sku' => 'MANUAL001',
+            'name' => 'Produto automático',
+            'sale_price' => '10.00',
+        ]);
 
-        $response = $this->actingAs(User::factory()->create())
-            ->from(route('products.index'))
-            ->post(route('products.store'), $payload);
-
-        $response->assertSessionHasErrors(['sku' => 'Este código já está sendo utilizado.']);
-        $this->assertDatabaseCount('products', 1);
+        $this->assertSame(Product::skuFromId($product->id), $product->sku);
+        $this->assertNotSame('MANUAL001', $product->sku);
     }
 
     public function test_name_is_required(): void
@@ -262,10 +288,10 @@ class ProductControllerTest extends TestCase
 
     public function test_authenticated_user_can_update_product(): void
     {
-        $product = Product::factory()->create(['sku' => 'OLD001']);
+        $product = Product::factory()->create();
+        $originalSku = $product->sku;
 
         $response = $this->actingAs(User::factory()->create())->put(route('products.update', $product), [
-            'sku' => 'NEW001',
             'name' => 'Produto atualizado',
             'sale_price' => 'R$ 259,90',
             'active' => '1',
@@ -275,7 +301,7 @@ class ProductControllerTest extends TestCase
             ->assertSessionHas('success', 'Produto atualizado com sucesso.')
             ->assertRedirect(route('products.index'));
         $product->refresh();
-        $this->assertSame('NEW001', $product->sku);
+        $this->assertSame($originalSku, $product->sku);
         $this->assertSame('Produto atualizado', $product->name);
         $this->assertSame('259.90', $product->sale_price);
     }
@@ -306,29 +332,65 @@ class ProductControllerTest extends TestCase
 
     public function test_product_can_be_updated_keeping_its_current_sku(): void
     {
-        $product = Product::factory()->create(['sku' => 'KEEP001']);
+        $product = Product::factory()->create();
+        $originalSku = $product->sku;
         $payload = $this->validPayload();
-        $payload['sku'] = 'KEEP001';
 
         $response = $this->actingAs(User::factory()->create())->put(route('products.update', $product), $payload);
 
         $response->assertSessionHasNoErrors();
-        $this->assertSame('KEEP001', $product->fresh()->sku);
+        $this->assertSame($originalSku, $product->fresh()->sku);
     }
 
-    public function test_product_cannot_use_another_products_sku(): void
+    public function test_product_update_rejects_manually_supplied_sku(): void
     {
-        $product = Product::factory()->create(['sku' => 'FIRST001']);
-        Product::factory()->create(['sku' => 'SECOND001']);
+        $product = Product::factory()->create(['name' => 'Produto original']);
+        $originalSku = $product->sku;
         $payload = $this->validPayload();
-        $payload['sku'] = 'SECOND001';
+        $payload['sku'] = 'MANUAL002';
+        $payload['name'] = 'Produto alterado';
 
         $response = $this->actingAs(User::factory()->create())
             ->from(route('products.index'))
             ->put(route('products.update', $product), $payload);
 
-        $response->assertSessionHasErrors(['sku' => 'Este código já está sendo utilizado.']);
-        $this->assertSame('FIRST001', $product->fresh()->sku);
+        $response->assertSessionHasErrors(['sku' => 'O SKU é gerado automaticamente e não pode ser informado.']);
+        $product->refresh();
+        $this->assertSame($originalSku, $product->sku);
+        $this->assertSame('Produto original', $product->name);
+    }
+
+    public function test_product_model_prevents_sku_changes(): void
+    {
+        $product = Product::factory()->create();
+        $product->sku = 'MANUAL003';
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('O SKU do produto não pode ser alterado.');
+
+        $product->save();
+    }
+
+    public function test_existing_legacy_sku_is_preserved_when_product_is_updated(): void
+    {
+        DB::table('products')->insert([
+            'business_id' => app(BusinessContext::class)->id(),
+            'sku' => 'SKU-LEGADO-001',
+            'name' => 'Produto legado',
+            'sale_price' => '10.00',
+            'active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $product = Product::query()->where('sku', 'SKU-LEGADO-001')->sole();
+        $payload = $this->validPayload();
+        $payload['name'] = 'Produto legado atualizado';
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('products.update', $product), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('SKU-LEGADO-001', $product->fresh()->sku);
     }
 
     public function test_update_without_new_photo_keeps_current_photo(): void
@@ -462,10 +524,10 @@ class ProductControllerTest extends TestCase
 
     public function test_search_finds_product_by_partial_sku(): void
     {
-        Product::factory()->create(['sku' => 'CAM001', 'name' => 'Produto encontrado']);
-        Product::factory()->create(['sku' => 'TEN002', 'name' => 'Produto ignorado']);
+        $target = Product::factory()->create(['name' => 'Produto encontrado']);
+        Product::factory()->create(['name' => 'Produto ignorado']);
 
-        $response = $this->actingAs(User::factory()->create())->get(route('products.index', ['search' => 'CAM']));
+        $response = $this->actingAs(User::factory()->create())->get(route('products.index', ['search' => $target->sku]));
 
         $response->assertOk()->assertSee('Produto encontrado')->assertDontSee('Produto ignorado');
     }
@@ -525,7 +587,6 @@ class ProductControllerTest extends TestCase
     public function test_product_list_is_paginated_with_five_records_and_preserves_search(): void
     {
         Product::factory()->count(11)->sequence(fn (Sequence $sequence): array => [
-            'sku' => sprintf('PROD%03d', $sequence->index + 1),
             'name' => sprintf('Produto %02d', $sequence->index + 1),
         ])->create();
 
@@ -558,12 +619,11 @@ class ProductControllerTest extends TestCase
     }
 
     /**
-     * @return array{sku: string, name: string, sale_price: string, active: string}
+     * @return array{name: string, sale_price: string, active: string}
      */
     private function validPayload(): array
     {
         return [
-            'sku' => 'PROD-001',
             'name' => 'Produto Teste',
             'sale_price' => 'R$ 129,90',
             'active' => '1',

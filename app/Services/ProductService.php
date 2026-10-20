@@ -32,7 +32,7 @@ class ProductService
     public function create(array $data): Product
     {
         $photo = $data['photo'] ?? null;
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['sku']);
         $data['active'] = true;
 
         $photoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
@@ -61,7 +61,7 @@ class ProductService
         $oldPhotoDisk = $product->storedPhotoDisk();
         $photo = $data['photo'] ?? null;
         $removePhoto = (bool) ($data['remove_photo'] ?? false);
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['sku']);
 
         $newPhotoPath = $photo instanceof UploadedFile ? $this->storePhoto($photo) : null;
 

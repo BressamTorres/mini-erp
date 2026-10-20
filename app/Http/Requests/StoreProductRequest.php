@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Services\BusinessContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -16,9 +14,7 @@ class StoreProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $sku = $this->input('sku');
         $normalized = [
-            'sku' => is_string($sku) ? trim($sku) : $sku,
             'sale_price' => $this->normalizeSalePrice($this->input('sale_price')),
         ];
 
@@ -40,14 +36,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sku' => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('products', 'sku')->where(
-                    fn ($query) => $query->where('business_id', app(BusinessContext::class)->id()),
-                ),
-            ],
+            'sku' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'sale_price' => ['required', 'numeric', 'gt:0'],
             'photo' => ['bail', 'nullable', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'image', 'max:5120'],
@@ -62,10 +51,7 @@ class StoreProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'sku.required' => 'O código é obrigatório.',
-            'sku.string' => 'O código deve ser um texto.',
-            'sku.max' => 'O código deve ter no máximo 100 caracteres.',
-            'sku.unique' => 'Este código já está sendo utilizado.',
+            'sku.prohibited' => 'O SKU é gerado automaticamente e não pode ser informado.',
             'name.required' => 'O nome é obrigatório.',
             'name.string' => 'O nome deve ser um texto.',
             'name.max' => 'O nome deve ter no máximo 255 caracteres.',

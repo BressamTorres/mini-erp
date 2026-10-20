@@ -89,7 +89,6 @@ class DuplicateSubmissionTest extends TestCase
         $user = User::factory()->create();
         $token = (string) Str::uuid();
         $payload = [
-            'sku' => $product->sku,
             'name' => 'Produto atualizado',
             'sale_price' => '199,90',
             'active' => '1',

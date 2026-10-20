@@ -14,7 +14,7 @@
         'photoUrl' => '',
         'removePhoto' => old('remove_photo') === '1',
         'fields' => [
-            'sku' => (string) old('sku', ''),
+            'sku' => '',
             'name' => (string) old('name', ''),
             'sale_price' => (string) old('sale_price', ''),
             'active' => (string) old('active', '1'),

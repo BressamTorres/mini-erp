@@ -59,7 +59,6 @@ class PhotoStorageTest extends TestCase
         Storage::fake('r2_products');
 
         $this->actingAs(User::factory()->create())->post(route('products.store'), [
-            'sku' => 'R2-001',
             'name' => 'Produto R2',
             'sale_price' => '149,90',
             'photo' => $this->fakeImage('produto.webp'),
@@ -180,7 +179,6 @@ class PhotoStorageTest extends TestCase
         ]);
 
         $this->actingAs(User::factory()->create())->put(route('products.update', $product), [
-            'sku' => $product->sku,
             'name' => $product->name,
             'sale_price' => $product->sale_price,
             'active' => '1',
@@ -228,7 +226,6 @@ class PhotoStorageTest extends TestCase
         ]);
 
         app(ProductService::class)->update($product->id, [
-            'sku' => $product->sku,
             'name' => $product->name,
             'sale_price' => $product->sale_price,
             'active' => true,
@@ -253,24 +250,21 @@ class PhotoStorageTest extends TestCase
         Storage::fake('r2_products');
         Storage::disk('r2_products')->put('products/current.jpg', 'current-photo');
         $product = Product::factory()->create([
-            'sku' => 'CURRENT-SKU',
             'photo_path' => 'products/current.jpg',
             'photo_disk' => 'r2_products',
         ]);
-        Product::factory()->create(['sku' => 'DUPLICATE-SKU']);
 
         $updateFailed = false;
 
         try {
             app(ProductService::class)->update($product->id, [
-                'sku' => 'DUPLICATE-SKU',
-                'name' => $product->name,
+                'name' => null,
                 'sale_price' => $product->sale_price,
                 'active' => true,
                 'photo' => $this->fakeImage('replacement.jpg'),
             ]);
 
-            $this->fail('A atualização deveria falhar pela duplicidade do SKU.');
+            $this->fail('A atualização deveria falhar pela restrição obrigatória do nome.');
         } catch (QueryException) {
             $updateFailed = true;
         }

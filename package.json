@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:js": "node --test tests/JavaScript/registration-formatters.test.js"
+        "test:js": "node --test tests/JavaScript/*.test.js"
     },
     "devDependencies": {
         "@playwright/test": "^1.63.0",

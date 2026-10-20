@@ -625,7 +625,6 @@ class SaleControllerTest extends TestCase
         $customer = Person::factory()->customer()->create(['name' => 'Cliente Detalhes']);
         $seller = Person::factory()->seller()->create(['name' => 'Vendedor Detalhes']);
         $product = Product::factory()->create([
-            'sku' => 'CAM-001',
             'name' => 'Camiseta Especial',
             'photo_path' => 'products/camiseta-especial.webp',
         ]);
@@ -650,7 +649,7 @@ class SaleControllerTest extends TestCase
             ->assertJsonPath('status', 'Ativo')
             ->assertJsonPath('total', 'R$ 179,80')
             ->assertJsonPath('items.0.sale_item_id', $item->id)
-            ->assertJsonPath('items.0.sku', 'CAM-001')
+            ->assertJsonPath('items.0.sku', $product->sku)
             ->assertJsonPath('items.0.product', 'Camiseta Especial')
             ->assertJsonPath('items.0.photo_url', '/storage/products/camiseta-especial.webp')
             ->assertJsonPath('items.0.quantity', 2)

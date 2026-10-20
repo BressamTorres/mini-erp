@@ -39,7 +39,7 @@ export default function registerProductForm(Alpine) {
             this.$watch('deactivateOpen', () => this.syncBodyScroll());
 
             if (this.modalOpen) {
-                this.focusSku();
+                this.focusName();
             }
 
             this.syncBodyScroll();
@@ -54,7 +54,7 @@ export default function registerProductForm(Alpine) {
             this.resetPhoto();
             this.showServerErrors = false;
             this.modalOpen = true;
-            this.focusSku();
+            this.focusName();
         },
 
         openEdit(button) {
@@ -71,7 +71,7 @@ export default function registerProductForm(Alpine) {
             this.resetPhoto(button.dataset.photoUrl);
             this.showServerErrors = false;
             this.modalOpen = true;
-            this.focusSku();
+            this.focusName();
         },
 
         closeModal() {
@@ -97,8 +97,8 @@ export default function registerProductForm(Alpine) {
             document.body.classList.toggle('overflow-hidden', this.modalOpen || this.deactivateOpen);
         },
 
-        focusSku() {
-            this.$nextTick(() => this.$refs.productSku?.focus());
+        focusName() {
+            this.$nextTick(() => this.$refs.productName?.focus());
         },
 
         selectPhoto(event) {
