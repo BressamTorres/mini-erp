@@ -1,0 +1,245 @@
+name: Deploy de produção
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: production-mini-erp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publicar Mini ERP
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+
+    env:
+      DEPLOY_PATH: /var/www/blog_infinit
+      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}
+
+    steps:
+      - name: Confirmar CI do commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          successful_runs="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&branch=main&status=completed&per_page=100" \
+            --jq '[.workflow_runs[] | select(.event == "push" and .conclusion == "success")] | length')"
+
+          if [ "$successful_runs" -lt 1 ]; then
+            echo "Nenhum CI aprovado foi encontrado para ${GITHUB_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Baixar commit aprovado
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, gd, intl, mbstring, pcntl, pdo_mysql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Montar release
+        run: |
+          composer install \
+            --no-dev \
+            --no-interaction \
+            --no-progress \
+            --prefer-dist \
+            --optimize-autoloader \
+            --classmap-authoritative
+          npm ci --ignore-scripts
+          npm run build
+          printf '%s\n' "$GITHUB_SHA" > REVISION
+          tar \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=.env \
+            --exclude='.env.*' \
+            --exclude=node_modules \
+            --exclude=storage \
+            --exclude=tests \
+            -czf "$RUNNER_TEMP/mini-erp-release.tar.gz" .
+
+      - name: Configurar SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+
+      - name: Enviar release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp \
+            -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -P "$DEPLOY_PORT" \
+            "$RUNNER_TEMP/mini-erp-release.tar.gz" \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/mini-erp-${RELEASE_ID}.tar.gz"
+
+      - name: Ativar release e verificar saúde
+        env:
+          DEPLOY_HEALTHCHECK_URL: ${{ secrets.DEPLOY_HEALTHCHECK_URL }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh \
+            -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- \
+            "$DEPLOY_PATH" \
+            "$RELEASE_ID" \
+            "$GITHUB_SHA" \
+            "$DEPLOY_HEALTHCHECK_URL" \
+            "/tmp/mini-erp-${RELEASE_ID}.tar.gz" <<'DEPLOY_SCRIPT'
+          set -euo pipefail
+
+          base_path="$1"
+          release_id="$2"
+          expected_revision="$3"
+          healthcheck_url="$4"
+          archive_path="$5"
+          deploy_state_path="$base_path/.deploy"
+          staging_path="$deploy_state_path/staging/$release_id"
+          backup_path="$deploy_state_path/backups/$release_id"
+          deployment_started=false
+
+          if [ ! -f "$base_path/.env" ] || [ ! -d "$base_path/storage" ]; then
+            echo ".env ou storage não encontrados em $base_path." >&2
+            exit 1
+          fi
+
+          command -v curl >/dev/null
+          command -v php >/dev/null
+          command -v rsync >/dev/null
+          command -v tar >/dev/null
+          mkdir -p "$staging_path" "$backup_path"
+
+          rollback_on_failure() {
+            exit_code="$?"
+            trap - EXIT
+            set +e
+
+            if [ "$deployment_started" = true ]; then
+              cd "$base_path"
+              php artisan down --retry=60 --no-interaction >/dev/null 2>&1 || true
+              rsync --archive --delete-after \
+                --exclude=.deploy \
+                --exclude=.env \
+                --exclude=.git \
+                --exclude=node_modules \
+                --exclude=public/storage \
+                --exclude=storage \
+                "$backup_path/" "$base_path/"
+              php artisan config:cache --no-interaction
+              php artisan route:cache --no-interaction
+              php artisan view:cache --no-interaction
+              sudo -n /usr/local/sbin/reload-php-fpm
+              php artisan queue:restart --no-interaction
+            fi
+
+            cd "$base_path"
+            php artisan up --no-interaction >/dev/null 2>&1 || true
+            rm -rf "$staging_path"
+            rm -f "$archive_path"
+            echo "Deploy falhou; snapshot preservado em $backup_path." >&2
+            exit "$exit_code"
+          }
+
+          trap rollback_on_failure EXIT
+
+          tar -xzf "$archive_path" -C "$staging_path"
+
+          release_revision="$(cat "$staging_path/REVISION")"
+          if [ "$release_revision" != "$expected_revision" ]; then
+            echo "Commit recebido difere do commit aprovado." >&2
+            exit 1
+          fi
+
+          rsync --archive \
+            --exclude=.deploy \
+            --exclude=.env \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=public/storage \
+            --exclude=storage \
+            "$base_path/" "$backup_path/"
+
+          deployment_started=true
+          cd "$base_path"
+          php artisan down --retry=60 --no-interaction
+
+          rsync --archive --delete-after \
+            --exclude=.deploy \
+            --exclude=.env \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=public/storage \
+            --exclude=storage \
+            "$staging_path/" "$base_path/"
+
+          php artisan config:cache --no-interaction
+          php artisan route:cache --no-interaction
+          php artisan view:cache --no-interaction
+          sudo -n /usr/local/sbin/reload-php-fpm
+          php artisan queue:restart --no-interaction
+          php artisan up --no-interaction
+
+          healthy=false
+          for attempt in {1..10}; do
+            if curl --fail --silent --show-error --max-time 15 "$healthcheck_url" >/dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 3
+          done
+
+          if [ "$healthy" != true ]; then
+            echo "Healthcheck falhou; release anterior restaurada." >&2
+            exit 1
+          fi
+
+          published_revision="$(cat "$base_path/REVISION")"
+          if [ "$published_revision" != "$expected_revision" ]; then
+            echo "Commit publicado difere do commit aprovado." >&2
+            exit 1
+          fi
+
+          rm -rf "$staging_path"
+          rm -f "$archive_path"
+          trap - EXIT
+          echo "Release $published_revision publicada com sucesso."
+          DEPLOY_SCRIPT

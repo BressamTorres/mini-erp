@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, gd, intl, mbstring, pcntl, pdo_sqlite, sqlite3, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Validar Composer
+        run: composer validate --strict --no-check-publish
+
+      - name: Instalar dependências PHP
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Preparar ambiente de testes
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force --no-interaction
+
+      - name: Validar formatação PHP
+        run: |
+          vendor/bin/pint --format agent
+          git diff --exit-code -- '*.php'
+
+      - name: Executar testes Laravel
+        run: php artisan test --compact
+
+      - name: Instalar dependências frontend
+        run: npm ci --ignore-scripts
+
+      - name: Executar testes JavaScript
+        run: npm run test:js --if-present
+
+      - name: Compilar frontend
+        run: npm run build
