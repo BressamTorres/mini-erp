@@ -33,20 +33,20 @@
 
             <div>
                 <label for="name" class="mb-2 block text-sm font-semibold text-slate-800">Nome completo</label>
-                <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Seu nome completo" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Ex.: Maria da Silva" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
             </div>
 
             <div>
                 <label for="email" class="mb-2 block text-sm font-semibold text-slate-800">E-mail</label>
-                <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username" placeholder="seu@email.com" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('email') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username" placeholder="Ex.: maria@email.com" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('email') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
 
             <div>
                 <label for="password" class="mb-2 block text-sm font-semibold text-slate-800">Senha</label>
                 <div class="relative">
-                    <input id="password" :type="showPassword ? 'text' : 'password'" name="password" required autocomplete="new-password" placeholder="Mínimo de 8 caracteres" class="h-12 w-full rounded-xl border bg-white py-3 pl-4 pr-11 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('password') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                    <input id="password" :type="showPassword ? 'text' : 'password'" name="password" required autocomplete="new-password" placeholder="Digite sua senha" class="h-12 w-full rounded-xl border bg-white py-3 pl-4 pr-11 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('password') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                     <button type="button" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 transition hover:text-violet-600" @click="showPassword = ! showPassword" :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
@@ -60,7 +60,7 @@
             <div>
                 <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-slate-800">Confirmar senha</label>
                 <div class="relative">
-                    <input id="password_confirmation" :type="showPasswordConfirmation ? 'text' : 'password'" name="password_confirmation" required autocomplete="new-password" placeholder="Repita sua senha" class="h-12 w-full rounded-xl border bg-white py-3 pl-4 pr-11 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('password') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                    <input id="password_confirmation" :type="showPasswordConfirmation ? 'text' : 'password'" name="password_confirmation" required autocomplete="new-password" placeholder="Confirme sua senha" class="h-12 w-full rounded-xl border bg-white py-3 pl-4 pr-11 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('password') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                     <button type="button" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 transition hover:text-violet-600" @click="showPasswordConfirmation = ! showPasswordConfirmation" :aria-label="showPasswordConfirmation ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
@@ -83,32 +83,32 @@
 
             <div>
                 <label for="business_trade_name" class="mb-2 block text-sm font-semibold text-slate-800">Nome fantasia</label>
-                <input id="business_trade_name" type="text" name="business_trade_name" value="{{ old('business_trade_name') }}" required autocomplete="organization" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_trade_name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="business_trade_name" type="text" name="business_trade_name" value="{{ old('business_trade_name') }}" required autocomplete="organization" placeholder="Ex.: Loja da Maria" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_trade_name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('business_trade_name')" class="mt-2" />
             </div>
 
             <div>
                 <label for="business_legal_name" class="mb-2 block text-sm font-semibold text-slate-800">Razão social</label>
-                <input id="business_legal_name" type="text" name="business_legal_name" value="{{ old('business_legal_name') }}" required class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_legal_name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="business_legal_name" type="text" name="business_legal_name" value="{{ old('business_legal_name') }}" required placeholder="Ex.: Maria Comércio Ltda." class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_legal_name') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('business_legal_name')" class="mt-2" />
             </div>
 
             <div>
                 <label for="business_document" class="mb-2 block text-sm font-semibold text-slate-800">CPF/CNPJ</label>
-                <input id="business_document" x-ref="businessDocument" x-model="businessDocument" @input="maskDocument($event)" @blur="validateDocument" type="text" name="business_document" required maxlength="18" inputmode="text" autocapitalize="characters" spellcheck="false" x-bind:aria-invalid="documentError !== ''" x-bind:class="documentError ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : '{{ $errors->has('business_document') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}'" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2">
+                <input id="business_document" x-ref="businessDocument" x-model="businessDocument" @input="maskDocument($event)" @blur="validateDocument" type="text" name="business_document" required maxlength="18" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="Ex.: 529.982.247-25" x-bind:aria-invalid="documentError !== ''" x-bind:class="documentError ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : '{{ $errors->has('business_document') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}'" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2">
                 <p x-cloak x-show="documentError" x-text="documentError" class="mt-2 text-sm text-red-600"></p>
                 <x-input-error :messages="$errors->get('business_document')" x-show="! documentError" class="mt-2" />
             </div>
 
             <div>
                 <label for="business_phone" class="mb-2 block text-sm font-semibold text-slate-800">Telefone</label>
-                <input id="business_phone" x-model="businessPhone" @input="maskPhone($event)" type="tel" name="business_phone" required maxlength="15" autocomplete="tel" inputmode="tel" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_phone') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="business_phone" x-model="businessPhone" @input="maskPhone($event)" type="tel" name="business_phone" required maxlength="15" autocomplete="tel" inputmode="tel" placeholder="Ex.: (44) 99999-9999" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_phone') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('business_phone')" class="mt-2" />
             </div>
 
             <div>
                 <label for="business_email" class="mb-2 block text-sm font-semibold text-slate-800">E-mail da empresa</label>
-                <input id="business_email" type="email" name="business_email" value="{{ old('business_email') }}" required autocomplete="email" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_email') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
+                <input id="business_email" type="email" name="business_email" value="{{ old('business_email') }}" required autocomplete="email" placeholder="Ex.: contato@empresa.com" class="h-12 w-full rounded-xl border bg-white px-4 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:ring-2 {{ $errors->has('business_email') ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-slate-300 focus:border-violet-500 focus:ring-violet-200' }}">
                 <x-input-error :messages="$errors->get('business_email')" class="mt-2" />
             </div>
 

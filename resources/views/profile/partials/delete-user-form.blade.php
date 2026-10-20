@@ -34,8 +34,8 @@
                     id="password"
                     name="password"
                     type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
+                    class="mt-1 block w-3/4 placeholder:text-slate-400"
+                    placeholder="Digite sua senha"
                 />
 
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
