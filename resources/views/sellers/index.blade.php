@@ -7,6 +7,7 @@
         'mode' => $isEditing ? 'edit' : 'create',
         'formAction' => $formAction,
         'storeUrl' => route('sellers.store'),
+        'uploadMaxBytes' => $uploadMaxBytes,
         'sellerId' => $oldSellerId,
         'submissionToken' => $errors->has('submission_token')
             ? (string) Illuminate\Support\Str::uuid()

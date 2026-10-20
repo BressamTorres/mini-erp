@@ -1,7 +1,7 @@
 import { submissionState } from './components/submission';
 import { documentValidationMessage, formatDocument } from './components/person-document';
 import { formatPhone } from './components/phone';
-import { validatePhotoInput } from './components/photo-upload';
+import { IMAGE_PROCESSING_MESSAGE, preparePhotoInput } from './components/photo-upload';
 
 export default function registerCustomerForm(Alpine) {
     Alpine.data('customerForm', (config) => ({
@@ -12,11 +12,13 @@ export default function registerCustomerForm(Alpine) {
         storeUrl: config.storeUrl,
         customerId: config.customerId,
         fields: config.fields,
+        uploadMaxBytes: config.uploadMaxBytes ?? null,
         documentError: '',
         showServerErrors: config.open,
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
         photoError: '',
+        photoProcessing: false,
         shouldRemovePhoto: config.removePhoto ?? false,
         deactivateOpen: false,
         deactivateAction: '',
@@ -95,8 +97,11 @@ export default function registerCustomerForm(Alpine) {
             this.$nextTick(() => this.$refs.customerName?.focus());
         },
 
-        selectPhoto(event) {
-            const { photo, error } = validatePhotoInput(event.target);
+        async selectPhoto(event) {
+            this.photoError = '';
+            this.photoProcessing = true;
+            const { photo, error } = await preparePhotoInput(event.target, { maxBytes: this.uploadMaxBytes });
+            this.photoProcessing = false;
 
             this.photoError = error;
 
@@ -113,6 +118,7 @@ export default function registerCustomerForm(Alpine) {
             this.releasePhotoPreview();
             this.photoPreview = '';
             this.photoError = '';
+            this.photoProcessing = false;
             this.shouldRemovePhoto = this.existingPhotoUrl !== '';
 
             if (this.$refs.customerPhoto) {
@@ -125,6 +131,7 @@ export default function registerCustomerForm(Alpine) {
             this.existingPhotoUrl = photoUrl ?? '';
             this.photoPreview = this.existingPhotoUrl;
             this.photoError = '';
+            this.photoProcessing = false;
             this.shouldRemovePhoto = false;
 
             this.$nextTick(() => {
@@ -155,6 +162,13 @@ export default function registerCustomerForm(Alpine) {
         },
 
         submitForm(event) {
+            if (this.photoProcessing) {
+                event.preventDefault();
+                this.photoError = IMAGE_PROCESSING_MESSAGE;
+
+                return;
+            }
+
             if (!this.validateDocument() || this.photoError !== '') {
                 event.preventDefault();
 

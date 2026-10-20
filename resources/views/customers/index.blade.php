@@ -9,6 +9,7 @@
         'mode' => $isEditing ? 'edit' : 'create',
         'formAction' => $formAction,
         'storeUrl' => route('customers.store'),
+        'uploadMaxBytes' => $uploadMaxBytes,
         'customerId' => $oldCustomerId,
         'submissionToken' => $errors->has('submission_token')
             ? (string) Illuminate\Support\Str::uuid()

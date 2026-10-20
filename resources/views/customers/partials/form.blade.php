@@ -146,7 +146,7 @@
 
                 <p class="mt-3 text-sm font-semibold text-slate-700">Foto do cliente</p>
                 <p class="mt-1 text-xs text-slate-500">PNG, JPG ou WEBP</p>
-                <p class="text-xs text-slate-500">Máx. 5 MB</p>
+                <p class="text-xs text-slate-500">Otimização automática antes do envio</p>
 
                 <button
                     type="button"

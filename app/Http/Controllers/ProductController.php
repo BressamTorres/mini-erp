@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\FormSubmissionService;
 use App\Services\ProductService;
+use App\Services\UploadLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,6 +16,7 @@ class ProductController extends Controller
     public function __construct(
         private ProductService $products,
         private FormSubmissionService $submissions,
+        private UploadLimitService $uploadLimits,
     ) {}
 
     public function index(Request $request): View
@@ -25,6 +27,7 @@ class ProductController extends Controller
         return view('products.index', [
             'products' => $this->products->paginate($search !== '' ? $search : null, $showInactive),
             'nextSkuPreview' => $this->products->estimateNextSku(),
+            'uploadMaxBytes' => $this->uploadLimits->maxFileBytes(),
             'search' => $search,
             'showInactive' => $showInactive,
         ]);

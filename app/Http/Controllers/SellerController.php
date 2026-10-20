@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePersonRequest;
 use App\Models\Person;
 use App\Services\FormSubmissionService;
 use App\Services\PersonService;
+use App\Services\UploadLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +17,7 @@ class SellerController extends Controller
     public function __construct(
         private PersonService $persons,
         private FormSubmissionService $submissions,
+        private UploadLimitService $uploadLimits,
     ) {}
 
     public function index(Request $request): View
@@ -25,6 +27,7 @@ class SellerController extends Controller
 
         return view('sellers.index', [
             'sellers' => $this->persons->paginate(Person::TYPE_SELLER, $search !== '' ? $search : null, $showInactive),
+            'uploadMaxBytes' => $this->uploadLimits->maxFileBytes(),
             'search' => $search,
             'showInactive' => $showInactive,
         ]);

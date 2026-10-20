@@ -257,8 +257,8 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseEmpty('products');
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_product_can_be_created_with_photo_up_to_five_megabytes(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_product_can_be_created_with_small_or_large_photo(int $size): void
     {
         Storage::fake('public');
         $payload = $this->validPayload();
@@ -289,20 +289,17 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseEmpty('products');
     }
 
-    public function test_photo_larger_than_five_megabytes_is_rejected(): void
+    public function test_technical_post_limit_returns_friendly_photo_error(): void
     {
-        Storage::fake('public');
-        $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('produto.jpg')->size(5121);
-
         $response = $this->actingAs(User::factory()->create())
             ->from(route('products.index'))
-            ->post(route('products.store'), $payload);
+            ->withServerVariables(['CONTENT_LENGTH' => 100 * 1024 * 1024])
+            ->post(route('products.store'), $this->validPayload());
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
-            ->assertSessionHasInput('name', $payload['name'])
-            ->assertRedirect(route('products.index'));
+            ->assertStatus(413)
+            ->assertSeeText('A imagem excede o limite técnico do servidor. Selecione um arquivo menor.')
+            ->assertSeeText('Voltar ao formulário');
         $this->assertDatabaseEmpty('products');
     }
 
@@ -427,8 +424,8 @@ class ProductControllerTest extends TestCase
         Storage::disk('public')->assertExists($path);
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_replacing_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_replacing_photo_without_application_size_limit_updates_path(int $size): void
     {
         Storage::fake('public');
         $oldPath = 'products/old.jpg';
@@ -447,7 +444,7 @@ class ProductControllerTest extends TestCase
         Storage::disk('public')->assertMissing($oldPath);
     }
 
-    public function test_update_rejects_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    public function test_update_rejects_excessive_image_dimensions_and_keeps_current_data(): void
     {
         Storage::fake('public');
         $oldPath = 'products/current.jpg';
@@ -458,14 +455,14 @@ class ProductControllerTest extends TestCase
         ]);
         $payload = $this->validPayload();
         $payload['name'] = 'Produto preenchido';
-        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+        $payload['photo'] = UploadedFile::fake()->image('oversized.jpg', 10001, 1);
 
         $response = $this->actingAs(User::factory()->create())
             ->from(route('products.index'))
             ->put(route('products.update', $product), $payload);
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasErrors(['photo' => 'A imagem possui dimensões muito grandes. Selecione uma imagem menor.'])
             ->assertSessionHasInput('name', 'Produto preenchido')
             ->assertRedirect(route('products.index'));
         $this->assertSame('Produto original', $product->fresh()->name);
@@ -630,11 +627,11 @@ class ProductControllerTest extends TestCase
     }
 
     /** @return array<string, array{int}> */
-    public static function validPhotoSizes(): array
+    public static function photoSizesWithoutApplicationLimit(): array
     {
         return [
-            'four megabytes' => [4096],
-            'exactly five megabytes' => [5120],
+            'small image' => [64],
+            'image above old limit' => [8192],
         ];
     }
 

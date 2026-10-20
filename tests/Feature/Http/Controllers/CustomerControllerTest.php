@@ -102,8 +102,8 @@ class CustomerControllerTest extends TestCase
         ]);
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_authenticated_user_can_create_customer_with_photo_up_to_five_megabytes(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_authenticated_user_can_create_customer_with_small_or_large_photo(int $size): void
     {
         Storage::fake('public');
         $user = User::factory()->create();
@@ -138,23 +138,12 @@ class CustomerControllerTest extends TestCase
         $this->assertDatabaseEmpty('persons');
     }
 
-    public function test_customer_photo_larger_than_five_megabytes_is_rejected(): void
+    public function test_customer_form_does_not_show_a_fixed_megabyte_limit(): void
     {
-        Storage::fake('public');
-        $user = User::factory()->create();
-        $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('cliente.jpg')->size(5121);
-
-        $response = $this
-            ->actingAs($user)
-            ->from(route('customers.index'))
-            ->post(route('customers.store'), $payload);
-
-        $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
-            ->assertSessionHasInput('name', $payload['name'])
-            ->assertRedirect(route('customers.index'));
-        $this->assertDatabaseEmpty('persons');
+        $this->actingAs(User::factory()->create())
+            ->get(route('customers.index'))
+            ->assertSee('Otimização automática antes do envio')
+            ->assertDontSee('Máx. 5 MB');
     }
 
     public function test_all_valid_fields_create_customer(): void
@@ -488,8 +477,8 @@ class CustomerControllerTest extends TestCase
         Storage::disk('public')->assertExists($photoPath);
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_replacing_customer_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_replacing_customer_photo_without_application_size_limit_updates_path(int $size): void
     {
         Storage::fake('public');
         $user = User::factory()->create();
@@ -509,7 +498,7 @@ class CustomerControllerTest extends TestCase
         Storage::disk('public')->assertMissing($oldPhotoPath);
     }
 
-    public function test_update_rejects_customer_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    public function test_update_rejects_customer_photo_with_excessive_dimensions(): void
     {
         Storage::fake('public');
         $oldPhotoPath = 'persons/current-photo.jpg';
@@ -520,14 +509,14 @@ class CustomerControllerTest extends TestCase
         ]);
         $payload = $this->validPayload();
         $payload['name'] = 'Cliente preenchido';
-        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+        $payload['photo'] = UploadedFile::fake()->image('oversized.jpg', 10001, 1);
 
         $response = $this->actingAs(User::factory()->create())
             ->from(route('customers.index'))
             ->put(route('customers.update', $customer), $payload);
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasErrors(['photo' => 'A imagem possui dimensões muito grandes. Selecione uma imagem menor.'])
             ->assertSessionHasInput('name', 'Cliente preenchido')
             ->assertRedirect(route('customers.index'));
         $this->assertSame('Cliente original', $customer->fresh()->name);
@@ -824,11 +813,11 @@ class CustomerControllerTest extends TestCase
     }
 
     /** @return array<string, array{int}> */
-    public static function validPhotoSizes(): array
+    public static function photoSizesWithoutApplicationLimit(): array
     {
         return [
-            'four megabytes' => [4096],
-            'exactly five megabytes' => [5120],
+            'small image' => [64],
+            'image above old limit' => [8192],
         ];
     }
 

@@ -207,8 +207,8 @@ class SellerControllerTest extends TestCase
         $this->assertDatabaseEmpty('persons');
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_seller_can_be_created_with_photo_up_to_five_megabytes(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_seller_can_be_created_with_small_or_large_photo(int $size): void
     {
         Storage::fake('public');
         $payload = $this->validPayload();
@@ -239,21 +239,14 @@ class SellerControllerTest extends TestCase
         $this->assertDatabaseEmpty('persons');
     }
 
-    public function test_photo_larger_than_five_megabytes_is_rejected(): void
+    public function test_seller_form_does_not_show_a_fixed_megabyte_limit(): void
     {
-        Storage::fake('public');
-        $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('vendedor.jpg')->size(5121);
-
         $response = $this->actingAs(User::factory()->create())
-            ->from(route('sellers.index'))
-            ->post(route('sellers.store'), $payload);
+            ->get(route('sellers.index'));
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
-            ->assertSessionHasInput('name', $payload['name'])
-            ->assertRedirect(route('sellers.index'));
-        $this->assertDatabaseEmpty('persons');
+            ->assertSee('Otimização automática antes do envio')
+            ->assertDontSee('Máx. 5 MB');
     }
 
     public function test_authenticated_user_can_update_seller(): void
@@ -344,8 +337,8 @@ class SellerControllerTest extends TestCase
         Storage::disk('public')->assertExists($path);
     }
 
-    #[DataProvider('validPhotoSizes')]
-    public function test_replacing_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
+    #[DataProvider('photoSizesWithoutApplicationLimit')]
+    public function test_replacing_photo_without_application_size_limit_updates_path(int $size): void
     {
         Storage::fake('public');
         $oldPath = 'persons/old.jpg';
@@ -364,7 +357,7 @@ class SellerControllerTest extends TestCase
         Storage::disk('public')->assertMissing($oldPath);
     }
 
-    public function test_update_rejects_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    public function test_update_rejects_seller_photo_with_excessive_dimensions(): void
     {
         Storage::fake('public');
         $oldPath = 'persons/current.jpg';
@@ -375,14 +368,14 @@ class SellerControllerTest extends TestCase
         ]);
         $payload = $this->validPayload();
         $payload['name'] = 'Vendedor preenchido';
-        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+        $payload['photo'] = UploadedFile::fake()->image('oversized.jpg', 10001, 1);
 
         $response = $this->actingAs(User::factory()->create())
             ->from(route('sellers.index'))
             ->put(route('sellers.update', $seller), $payload);
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasErrors(['photo' => 'A imagem possui dimensões muito grandes. Selecione uma imagem menor.'])
             ->assertSessionHasInput('name', 'Vendedor preenchido')
             ->assertRedirect(route('sellers.index'));
         $this->assertSame('Vendedor original', $seller->fresh()->name);
@@ -606,11 +599,11 @@ class SellerControllerTest extends TestCase
     }
 
     /** @return array<string, array{int}> */
-    public static function validPhotoSizes(): array
+    public static function photoSizesWithoutApplicationLimit(): array
     {
         return [
-            'four megabytes' => [4096],
-            'exactly five megabytes' => [5120],
+            'small image' => [64],
+            'image above old limit' => [8192],
         ];
     }
 

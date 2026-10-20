@@ -51,7 +51,7 @@
                 </div>
                 <p class="mt-3 text-sm font-semibold text-slate-700">Imagem do produto</p>
                 <p class="mt-1 text-xs text-slate-500">PNG, JPG ou WEBP</p>
-                <p class="text-xs text-slate-500">Máx. 5 MB</p>
+                <p class="text-xs text-slate-500">Otimização automática antes do envio</p>
                 <button type="button" class="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1" @click="$refs.productPhoto.click()">Selecionar imagem</button>
                 <button x-show="photoPreview" type="button" class="mt-2 text-xs font-medium text-rose-600 transition hover:text-rose-700" @click="removePhoto">Remover foto</button>
             </div>

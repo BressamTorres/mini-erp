@@ -8,6 +8,7 @@
         'formAction' => $formAction,
         'storeUrl' => route('products.store'),
         'nextSkuPreview' => $nextSkuPreview,
+        'uploadMaxBytes' => $uploadMaxBytes,
         'productId' => $oldProductId,
         'submissionToken' => $errors->has('submission_token')
             ? (string) Illuminate\Support\Str::uuid()
