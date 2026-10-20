@@ -13,6 +13,7 @@
                 <input id="product-sku" type="text" disabled readonly x-model="fields.sku"
                     class="block w-full cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 shadow-sm placeholder:text-slate-400"
                     x-bind:placeholder="mode === 'edit' ? '' : 'Gerado automaticamente após salvar'">
+                <p x-cloak x-show="mode === 'create' && fields.sku !== ''" class="mt-1.5 text-xs text-slate-500">Código previsto. Confirmado ao salvar.</p>
             </div>
 
             <div>

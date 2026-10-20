@@ -7,6 +7,7 @@
         'mode' => $isEditing ? 'edit' : 'create',
         'formAction' => $formAction,
         'storeUrl' => route('products.store'),
+        'nextSkuPreview' => $nextSkuPreview,
         'productId' => $oldProductId,
         'submissionToken' => $errors->has('submission_token')
             ? (string) Illuminate\Support\Str::uuid()
@@ -14,7 +15,7 @@
         'photoUrl' => '',
         'removePhoto' => old('remove_photo') === '1',
         'fields' => [
-            'sku' => '',
+            'sku' => $isEditing ? '' : ($nextSkuPreview ?? ''),
             'name' => (string) old('name', ''),
             'sale_price' => (string) old('sale_price', ''),
             'active' => (string) old('active', '1'),

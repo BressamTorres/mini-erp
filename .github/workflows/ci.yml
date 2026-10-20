@@ -27,7 +27,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: bcmath, gd, intl, mbstring, pcntl, pdo_sqlite, sqlite3, zip
+          extensions: bcmath, gd, intl, mbstring, pcntl, pdo_mysql, pdo_sqlite, sqlite3, zip
           coverage: none
           tools: composer:v2
 
@@ -56,6 +56,9 @@ jobs:
       - name: Executar testes Laravel
         run: php artisan test --compact
 
+      - name: Executar regressão de SKU no MySQL
+        run: php artisan test --compact --configuration phpunit.mysql.xml
+
       - name: Instalar dependências frontend
         run: npm ci --ignore-scripts
 
@@ -64,3 +67,17 @@ jobs:
 
       - name: Compilar frontend
         run: npm run build
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: mini_erp_sku_test
+          MYSQL_ROOT_PASSWORD: testing
+        ports:
+          - 33060:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptesting --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20

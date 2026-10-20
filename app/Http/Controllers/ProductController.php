@@ -24,6 +24,7 @@ class ProductController extends Controller
 
         return view('products.index', [
             'products' => $this->products->paginate($search !== '' ? $search : null, $showInactive),
+            'nextSkuPreview' => $this->products->estimateNextSku(),
             'search' => $search,
             'showInactive' => $showInactive,
         ]);

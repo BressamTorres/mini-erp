@@ -22,6 +22,7 @@ export default function registerProductForm(Alpine) {
         mode: config.mode,
         formAction: config.formAction,
         storeUrl: config.storeUrl,
+        nextSkuPreview: config.nextSkuPreview ?? '',
         productId: config.productId,
         fields: config.fields,
         showServerErrors: config.open,
@@ -50,7 +51,7 @@ export default function registerProductForm(Alpine) {
             this.mode = 'create';
             this.formAction = this.storeUrl;
             this.productId = '';
-            this.fields = { sku: '', name: '', sale_price: '', active: '1' };
+            this.fields = { sku: this.nextSkuPreview, name: '', sale_price: '', active: '1' };
             this.resetPhoto();
             this.showServerErrors = false;
             this.modalOpen = true;

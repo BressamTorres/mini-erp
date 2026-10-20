@@ -26,6 +26,11 @@ class ProductService
         return $this->products->paginate($search, $showInactive);
     }
 
+    public function estimateNextSku(): ?string
+    {
+        return $this->products->estimateNextSku();
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */

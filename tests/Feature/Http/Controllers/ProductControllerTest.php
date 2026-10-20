@@ -59,12 +59,32 @@ class ProductControllerTest extends TestCase
             ->assertSee('colspan="5"', false)
             ->assertSee('role="combobox"', false)
             ->assertSee('name="active"', false)
+            ->assertSee('000001')
+            ->assertSee('Código previsto. Confirmado ao salvar.')
             ->assertSee('Gerado automaticamente após salvar')
             ->assertSee('id="product-sku" type="text" disabled readonly', false)
             ->assertDontSee('name="sku"', false)
             ->assertSee('@change="$el.form.requestSubmit()"', false)
             ->assertDontSee('<select id="product-active"', false)
             ->assertSee('enctype="multipart/form-data"', false);
+    }
+
+    public function test_sku_preview_does_not_reserve_or_consume_product_ids(): void
+    {
+        $product = Product::factory()->create();
+        $product->delete();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('products.index'))->assertSee('000002');
+        $this->actingAs($user)->get(route('products.index'))->assertSee('000002');
+
+        $this->actingAs($user)
+            ->post(route('products.store'), $this->validPayload())
+            ->assertSessionHasNoErrors();
+
+        $createdProduct = Product::query()->sole();
+        $this->assertSame(2, $createdProduct->id);
+        $this->assertSame('000002', $createdProduct->sku);
     }
 
     public function test_authenticated_user_can_create_product_without_photo(): void
