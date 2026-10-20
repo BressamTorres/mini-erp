@@ -57,7 +57,7 @@ jobs:
         run: php artisan test --compact
 
       - name: Executar regressão de SKU no MySQL
-        run: php artisan test --compact --configuration phpunit.mysql.xml
+        run: vendor/bin/phpunit -c phpunit.mysql.xml
 
       - name: Instalar dependências frontend
         run: npm ci --ignore-scripts
