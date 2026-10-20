@@ -73,7 +73,8 @@ class StorePersonRequest extends FormRequest
             'photo.mimes' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.extensions' => 'A foto deve estar no formato JPG, JPEG, PNG ou WEBP.',
             'photo.image' => 'O arquivo enviado deve ser uma imagem válida.',
-            'photo.max' => 'A foto deve ter no máximo 5 MB.',
+            'photo.max' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.',
+            'photo.uploaded' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.',
             'submission_token.uuid' => 'Não foi possível identificar este envio. Tente novamente.',
         ];
     }

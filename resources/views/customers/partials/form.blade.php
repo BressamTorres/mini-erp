@@ -128,11 +128,8 @@
             >
 
             <div
-                @class([
-                    'flex min-h-64 flex-col items-center justify-center rounded-xl border bg-slate-50/70 p-4 text-center',
-                    'border-rose-300' => $errors->has('photo'),
-                    'border-slate-200' => ! $errors->has('photo'),
-                ])
+                x-bind:class="photoError ? 'border-rose-300' : '{{ $errors->has('photo') ? 'border-rose-300' : 'border-slate-200' }}'"
+                class="flex min-h-64 flex-col items-center justify-center rounded-xl border bg-slate-50/70 p-4 text-center"
             >
                 <div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-lg bg-white">
                     <img
@@ -169,8 +166,9 @@
                 </button>
             </div>
 
+            <p x-cloak x-show="photoError" x-text="photoError" class="mt-1.5 text-sm text-rose-600" role="alert"></p>
             @error('photo')
-                <p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
+                <p x-show="showServerErrors && ! photoError" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>
             @enderror
         </div>
     </div>

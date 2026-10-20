@@ -1,6 +1,7 @@
 import { submissionState } from './components/submission';
 import { documentValidationMessage, formatDocument } from './components/person-document';
 import { formatPhone } from './components/phone';
+import { validatePhotoInput } from './components/photo-upload';
 
 export default function registerCustomerForm(Alpine) {
     Alpine.data('customerForm', (config) => ({
@@ -15,6 +16,7 @@ export default function registerCustomerForm(Alpine) {
         showServerErrors: config.open,
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
+        photoError: '',
         shouldRemovePhoto: config.removePhoto ?? false,
         deactivateOpen: false,
         deactivateAction: '',
@@ -94,7 +96,9 @@ export default function registerCustomerForm(Alpine) {
         },
 
         selectPhoto(event) {
-            const [photo] = event.target.files;
+            const { photo, error } = validatePhotoInput(event.target);
+
+            this.photoError = error;
 
             if (!photo) {
                 return;
@@ -108,6 +112,7 @@ export default function registerCustomerForm(Alpine) {
         removePhoto() {
             this.releasePhotoPreview();
             this.photoPreview = '';
+            this.photoError = '';
             this.shouldRemovePhoto = this.existingPhotoUrl !== '';
 
             if (this.$refs.customerPhoto) {
@@ -119,6 +124,7 @@ export default function registerCustomerForm(Alpine) {
             this.releasePhotoPreview();
             this.existingPhotoUrl = photoUrl ?? '';
             this.photoPreview = this.existingPhotoUrl;
+            this.photoError = '';
             this.shouldRemovePhoto = false;
 
             this.$nextTick(() => {
@@ -149,9 +155,12 @@ export default function registerCustomerForm(Alpine) {
         },
 
         submitForm(event) {
-            if (!this.validateDocument()) {
+            if (!this.validateDocument() || this.photoError !== '') {
                 event.preventDefault();
-                this.$nextTick(() => this.$refs.customerDocument?.focus());
+
+                if (this.documentError !== '') {
+                    this.$nextTick(() => this.$refs.customerDocument?.focus());
+                }
 
                 return;
             }

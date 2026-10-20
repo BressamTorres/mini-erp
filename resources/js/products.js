@@ -1,4 +1,5 @@
 import { submissionState } from './components/submission';
+import { validatePhotoInput } from './components/photo-upload';
 
 function formatSalePrice(value) {
     const digits = String(value ?? '').replace(/\D/g, '');
@@ -26,6 +27,7 @@ export default function registerProductForm(Alpine) {
         showServerErrors: config.open,
         photoPreview: config.photoUrl ?? '',
         existingPhotoUrl: config.photoUrl ?? '',
+        photoError: '',
         shouldRemovePhoto: config.removePhoto ?? false,
         deactivateOpen: false,
         deactivateAction: '',
@@ -100,7 +102,9 @@ export default function registerProductForm(Alpine) {
         },
 
         selectPhoto(event) {
-            const [photo] = event.target.files;
+            const { photo, error } = validatePhotoInput(event.target);
+
+            this.photoError = error;
 
             if (!photo) {
                 return;
@@ -114,6 +118,7 @@ export default function registerProductForm(Alpine) {
         removePhoto() {
             this.releasePhotoPreview();
             this.photoPreview = '';
+            this.photoError = '';
             this.shouldRemovePhoto = this.existingPhotoUrl !== '';
 
             if (this.$refs.productPhoto) {
@@ -125,6 +130,7 @@ export default function registerProductForm(Alpine) {
             this.releasePhotoPreview();
             this.existingPhotoUrl = photoUrl ?? '';
             this.photoPreview = this.existingPhotoUrl;
+            this.photoError = '';
             this.shouldRemovePhoto = false;
 
             this.$nextTick(() => {
@@ -138,6 +144,16 @@ export default function registerProductForm(Alpine) {
             if (this.photoPreview.startsWith('blob:')) {
                 URL.revokeObjectURL(this.photoPreview);
             }
+        },
+
+        submitForm(event) {
+            if (this.photoError !== '') {
+                event.preventDefault();
+
+                return;
+            }
+
+            this.guardSubmit(event);
         },
 
         maskSalePrice(event) {

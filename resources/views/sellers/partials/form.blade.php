@@ -51,7 +51,7 @@
         <div>
             <input id="seller-photo" name="photo" type="file" class="sr-only" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" x-ref="sellerPhoto" @change="selectPhoto($event)">
 
-            <div @class(['flex min-h-64 flex-col items-center justify-center rounded-xl border bg-slate-50/70 p-4 text-center', 'border-rose-300' => $errors->has('photo'), 'border-slate-200' => ! $errors->has('photo')])>
+            <div x-bind:class="photoError ? 'border-rose-300' : '{{ $errors->has('photo') ? 'border-rose-300' : 'border-slate-200' }}'" class="flex min-h-64 flex-col items-center justify-center rounded-xl border bg-slate-50/70 p-4 text-center">
                 <div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-lg bg-white">
                     <img x-show="photoPreview" x-bind:src="photoPreview" class="h-full w-full object-cover" alt="Pré-visualização da foto do vendedor">
                     <svg x-show="! photoPreview" class="h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -64,7 +64,8 @@
                 <button type="button" class="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1" @click="$refs.sellerPhoto.click()">Selecionar imagem</button>
                 <button x-show="photoPreview" type="button" class="mt-2 text-xs font-medium text-rose-600 transition hover:text-rose-700" @click="removePhoto">Remover foto</button>
             </div>
-            @error('photo')<p x-show="showServerErrors" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror
+            <p x-cloak x-show="photoError" x-text="photoError" class="mt-1.5 text-sm text-rose-600" role="alert"></p>
+            @error('photo')<p x-show="showServerErrors && ! photoError" class="mt-1.5 text-sm text-rose-600">{{ $message }}</p>@enderror
         </div>
     </div>
 

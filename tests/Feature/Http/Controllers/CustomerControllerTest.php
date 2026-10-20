@@ -102,12 +102,13 @@ class CustomerControllerTest extends TestCase
         ]);
     }
 
-    public function test_authenticated_user_can_create_customer_with_valid_photo(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_authenticated_user_can_create_customer_with_photo_up_to_five_megabytes(int $size): void
     {
         Storage::fake('public');
         $user = User::factory()->create();
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('cliente.jpg')->size(5120);
+        $payload['photo'] = $this->fakeImage('cliente.jpg')->size($size);
 
         $response = $this->actingAs($user)->post(route('customers.store'), $payload);
 
@@ -150,7 +151,8 @@ class CustomerControllerTest extends TestCase
             ->post(route('customers.store'), $payload);
 
         $response
-            ->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 5 MB.'])
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', $payload['name'])
             ->assertRedirect(route('customers.index'));
         $this->assertDatabaseEmpty('persons');
     }
@@ -486,7 +488,8 @@ class CustomerControllerTest extends TestCase
         Storage::disk('public')->assertExists($photoPath);
     }
 
-    public function test_replacing_customer_photo_updates_path_and_removes_old_file(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_replacing_customer_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
     {
         Storage::fake('public');
         $user = User::factory()->create();
@@ -494,7 +497,7 @@ class CustomerControllerTest extends TestCase
         Storage::disk('public')->put($oldPhotoPath, 'old-photo-content');
         $customer = Person::factory()->customer()->create(['photo_path' => $oldPhotoPath]);
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('new-photo.png');
+        $payload['photo'] = $this->fakeImage('new-photo.png')->size($size);
 
         $response = $this->actingAs($user)->put(route('customers.update', $customer), $payload);
 
@@ -504,6 +507,32 @@ class CustomerControllerTest extends TestCase
         $this->assertNotSame($oldPhotoPath, $newPhotoPath);
         Storage::disk('public')->assertExists($newPhotoPath);
         Storage::disk('public')->assertMissing($oldPhotoPath);
+    }
+
+    public function test_update_rejects_customer_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    {
+        Storage::fake('public');
+        $oldPhotoPath = 'persons/current-photo.jpg';
+        Storage::disk('public')->put($oldPhotoPath, 'current-photo');
+        $customer = Person::factory()->customer()->create([
+            'name' => 'Cliente original',
+            'photo_path' => $oldPhotoPath,
+        ]);
+        $payload = $this->validPayload();
+        $payload['name'] = 'Cliente preenchido';
+        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('customers.index'))
+            ->put(route('customers.update', $customer), $payload);
+
+        $response
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', 'Cliente preenchido')
+            ->assertRedirect(route('customers.index'));
+        $this->assertSame('Cliente original', $customer->fresh()->name);
+        $this->assertSame($oldPhotoPath, $customer->fresh()->photo_path);
+        Storage::disk('public')->assertExists($oldPhotoPath);
     }
 
     public function test_authenticated_user_can_remove_customer_photo(): void
@@ -792,6 +821,15 @@ class CustomerControllerTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->delete("/customers/{$customer->id}")
             ->assertMethodNotAllowed();
+    }
+
+    /** @return array<string, array{int}> */
+    public static function validPhotoSizes(): array
+    {
+        return [
+            'four megabytes' => [4096],
+            'exactly five megabytes' => [5120],
+        ];
     }
 
     /**

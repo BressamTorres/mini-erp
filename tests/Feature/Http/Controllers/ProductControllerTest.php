@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ProductControllerTest extends TestCase
@@ -210,11 +211,12 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseEmpty('products');
     }
 
-    public function test_product_can_be_created_with_valid_photo(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_product_can_be_created_with_photo_up_to_five_megabytes(int $size): void
     {
         Storage::fake('public');
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('produto.jpg')->size(5120);
+        $payload['photo'] = $this->fakeImage('produto.jpg')->size($size);
 
         $user = User::factory()->create();
         $response = $this->actingAs($user)->post(route('products.store'), $payload);
@@ -251,7 +253,10 @@ class ProductControllerTest extends TestCase
             ->from(route('products.index'))
             ->post(route('products.store'), $payload);
 
-        $response->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 5 MB.']);
+        $response
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', $payload['name'])
+            ->assertRedirect(route('products.index'));
         $this->assertDatabaseEmpty('products');
     }
 
@@ -340,14 +345,15 @@ class ProductControllerTest extends TestCase
         Storage::disk('public')->assertExists($path);
     }
 
-    public function test_replacing_photo_updates_path_and_removes_old_file(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_replacing_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
     {
         Storage::fake('public');
         $oldPath = 'products/old.jpg';
         Storage::disk('public')->put($oldPath, 'old');
         $product = Product::factory()->create(['photo_path' => $oldPath]);
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('new.png');
+        $payload['photo'] = $this->fakeImage('new.png')->size($size);
 
         $response = $this->actingAs(User::factory()->create())->put(route('products.update', $product), $payload);
 
@@ -357,6 +363,32 @@ class ProductControllerTest extends TestCase
         $this->assertNotSame($oldPath, $newPath);
         Storage::disk('public')->assertExists($newPath);
         Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_update_rejects_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    {
+        Storage::fake('public');
+        $oldPath = 'products/current.jpg';
+        Storage::disk('public')->put($oldPath, 'current');
+        $product = Product::factory()->create([
+            'name' => 'Produto original',
+            'photo_path' => $oldPath,
+        ]);
+        $payload = $this->validPayload();
+        $payload['name'] = 'Produto preenchido';
+        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('products.index'))
+            ->put(route('products.update', $product), $payload);
+
+        $response
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', 'Produto preenchido')
+            ->assertRedirect(route('products.index'));
+        $this->assertSame('Produto original', $product->fresh()->name);
+        $this->assertSame($oldPath, $product->fresh()->photo_path);
+        Storage::disk('public')->assertExists($oldPath);
     }
 
     public function test_authenticated_user_can_remove_photo(): void
@@ -514,6 +546,15 @@ class ProductControllerTest extends TestCase
                     && str_contains((string) $products->nextPageUrl(), 'search=Produto')
                     && str_contains((string) $products->nextPageUrl(), 'show_inactive=1');
             });
+    }
+
+    /** @return array<string, array{int}> */
+    public static function validPhotoSizes(): array
+    {
+        return [
+            'four megabytes' => [4096],
+            'exactly five megabytes' => [5120],
+        ];
     }
 
     /**

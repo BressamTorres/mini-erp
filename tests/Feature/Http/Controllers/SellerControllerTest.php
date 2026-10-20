@@ -207,11 +207,12 @@ class SellerControllerTest extends TestCase
         $this->assertDatabaseEmpty('persons');
     }
 
-    public function test_seller_can_be_created_with_valid_photo(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_seller_can_be_created_with_photo_up_to_five_megabytes(int $size): void
     {
         Storage::fake('public');
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('vendedor.jpg')->size(5120);
+        $payload['photo'] = $this->fakeImage('vendedor.jpg')->size($size);
 
         $user = User::factory()->create();
         $response = $this->actingAs($user)->post(route('sellers.store'), $payload);
@@ -248,7 +249,10 @@ class SellerControllerTest extends TestCase
             ->from(route('sellers.index'))
             ->post(route('sellers.store'), $payload);
 
-        $response->assertSessionHasErrors(['photo' => 'A foto deve ter no máximo 5 MB.']);
+        $response
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', $payload['name'])
+            ->assertRedirect(route('sellers.index'));
         $this->assertDatabaseEmpty('persons');
     }
 
@@ -340,14 +344,15 @@ class SellerControllerTest extends TestCase
         Storage::disk('public')->assertExists($path);
     }
 
-    public function test_replacing_photo_updates_path_and_removes_old_file(): void
+    #[DataProvider('validPhotoSizes')]
+    public function test_replacing_photo_up_to_five_megabytes_updates_path_and_removes_old_file(int $size): void
     {
         Storage::fake('public');
         $oldPath = 'persons/old.jpg';
         Storage::disk('public')->put($oldPath, 'old');
         $seller = Person::factory()->seller()->create(['photo_path' => $oldPath]);
         $payload = $this->validPayload();
-        $payload['photo'] = $this->fakeImage('new.png');
+        $payload['photo'] = $this->fakeImage('new.png')->size($size);
 
         $response = $this->actingAs(User::factory()->create())->put(route('sellers.update', $seller), $payload);
 
@@ -357,6 +362,32 @@ class SellerControllerTest extends TestCase
         $this->assertNotSame($oldPath, $newPath);
         Storage::disk('public')->assertExists($newPath);
         Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_update_rejects_photo_larger_than_five_megabytes_and_keeps_current_data(): void
+    {
+        Storage::fake('public');
+        $oldPath = 'persons/current.jpg';
+        Storage::disk('public')->put($oldPath, 'current');
+        $seller = Person::factory()->seller()->create([
+            'name' => 'Vendedor original',
+            'photo_path' => $oldPath,
+        ]);
+        $payload = $this->validPayload();
+        $payload['name'] = 'Vendedor preenchido';
+        $payload['photo'] = $this->fakeImage('oversized.jpg')->size(5121);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->from(route('sellers.index'))
+            ->put(route('sellers.update', $seller), $payload);
+
+        $response
+            ->assertSessionHasErrors(['photo' => 'A imagem deve ter no máximo 5 MB. Selecione um arquivo menor.'])
+            ->assertSessionHasInput('name', 'Vendedor preenchido')
+            ->assertRedirect(route('sellers.index'));
+        $this->assertSame('Vendedor original', $seller->fresh()->name);
+        $this->assertSame($oldPath, $seller->fresh()->photo_path);
+        Storage::disk('public')->assertExists($oldPath);
     }
 
     public function test_authenticated_user_can_remove_photo(): void
@@ -572,6 +603,15 @@ class SellerControllerTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->delete("/sellers/{$seller->id}")
             ->assertMethodNotAllowed();
+    }
+
+    /** @return array<string, array{int}> */
+    public static function validPhotoSizes(): array
+    {
+        return [
+            'four megabytes' => [4096],
+            'exactly five megabytes' => [5120],
+        ];
     }
 
     /**
